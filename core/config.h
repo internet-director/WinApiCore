@@ -37,4 +37,9 @@ typedef uint64_t size_t;
 #define END L"\r\n"
 #define __countof(X) sizeof(X) / sizeof(X[0])
 
+/*-----------------------------export dll settinds-----------------------------*/
+
+#define MEM_EXPORT __declspec(dllexport)
+#define PROCESS_EXPORT __declspec(dllexport)
+
 #endif

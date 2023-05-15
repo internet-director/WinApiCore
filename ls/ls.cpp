@@ -1,16 +1,12 @@
-#include <iostream>
-#include <string>
 #include <Windows.h>
 
 #include <core/mem.h>
-
-#define __countof(X) sizeof(X) / sizeof(X[0])
 
 LPCWSTR black_list[] = { L".", L".." };
 
 int printConsole(LPCWSTR buffer, DWORD sz) 
 {
-	static HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
+	HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 	if (hout == INVALID_HANDLE_VALUE) {
 		return -1;
@@ -34,9 +30,14 @@ bool parseAruments(int argc, LPWSTR* argv)
 	return true;
 }
 
+#ifdef _DEBUG 
 int main()
+#else
+int entry()
+#endif
 {
 	core::memInit();
+	Sleep(500000000);
 
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -63,7 +64,7 @@ int main()
 
 	do {
 		bool bCheck = false;
-		size_t len = wcslen(fd.cFileName);
+		DWORD len = lstrlenW(fd.cFileName);
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 			for (uint32_t i = 0; i < __countof(black_list) && !bCheck; i++) {
 				if (!lstrcmpW(fd.cFileName, black_list[i])) bCheck = true;

@@ -4,6 +4,7 @@
 HANDLE proc_heap;
 
 namespace core {
+	
 	void memInit() {
 		proc_heap = GetProcessHeap();
 	}
