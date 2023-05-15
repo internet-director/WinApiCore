@@ -1,6 +1,5 @@
 #ifndef _CONFIG_HDR
 #define _CONFIG_HDR
-#include "non_crt_math.h"
 #include <Windows.h>
 
 typedef signed char        int8_t;

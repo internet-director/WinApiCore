@@ -2,7 +2,7 @@
 #include <string>
 #include <Windows.h>
 
-#include <core/_memory.h>
+#include <core/mem.h>
 
 #define __countof(X) sizeof(X) / sizeof(X[0])
 
@@ -36,23 +36,28 @@ bool parseAruments(int argc, LPWSTR* argv)
 
 int main()
 {
+	core::memInit();
+
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	if (!parseAruments(argc, argv)) {
 		return 1;
 	}
 
-	LPWSTR buffer = static_cast<LPWSTR>(mem::alloc((INT16_MAX + 6) * sizeof(WCHAR)));
+	LPWSTR buffer = static_cast<LPWSTR>(core::alloc((INT16_MAX + 6) * sizeof(WCHAR)));
+	if (buffer == nullptr) {
+		return 1;
+	}
 	{
 		DWORD sz = GetCurrentDirectoryW(INT16_MAX, buffer + 4);
-		mem::memcpy(buffer, L"\\\\.\\", 4 * sizeof(WCHAR));
-		mem::memcpy(buffer + sz + 4, L"\\*", 3 * sizeof(WCHAR));
+		core::memcpy(buffer, L"\\\\.\\", 4 * sizeof(WCHAR));
+		core::memcpy(buffer + sz + 4, L"\\*", 3 * sizeof(WCHAR));
 	}
 	WIN32_FIND_DATA fd;
 	HANDLE hFile = FindFirstFileW(buffer, & fd);
 
 	if (hFile == INVALID_HANDLE_VALUE) {
-		mem::free(buffer);
+		core::free(buffer);
 		return 2;
 	}
 
@@ -79,6 +84,6 @@ int main()
 	} while (FindNextFileW(hFile, &fd));
 
 	FindClose(hFile);
-	mem::free(buffer);
+	core::free(buffer);
 	return 0;
 }
