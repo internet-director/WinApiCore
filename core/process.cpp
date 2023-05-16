@@ -8,6 +8,11 @@ namespace core {
 		close();
 	}
 
+	Process::Process(int pid): Process()
+	{
+		pe = getPEntry(FIND_BY_PID, pid);
+	}
+
 	Process::Process(const HANDLE handle) : Process()
 	{
 		this->handle = handle;
@@ -15,9 +20,7 @@ namespace core {
 
 	Process::Process(const WCHAR* processName) : Process()
 	{
-		pe = getPEntry([processName](const PROCESSENTRY32W pe) {
-			return lstrcmpW(processName, pe.szExeFile) == 0;
-			});
+		pe = getPEntry(FIND_BY_NAME, processName);
 	}
 
 	Process::~Process()
@@ -27,16 +30,12 @@ namespace core {
 
 	int Process::getPid(int pid)
 	{
-		return getPEntry([pid](const PROCESSENTRY32W pe) { 
-			return pe.th32ProcessID == pid; }
-		).th32ProcessID;
+		return getPEntry(FIND_BY_PID, pid).th32ProcessID;
 	}
 
 	int Process::getPid(const WCHAR* processName)
 	{
-		return getPEntry([processName](const PROCESSENTRY32W pe) { 
-			return wcscmp(processName, pe.szExeFile) == 0; }
-		).th32ProcessID;
+		return getPEntry(FIND_BY_NAME, processName).th32ProcessID;
 	}
 
 	int Process::getPid() const
@@ -68,9 +67,9 @@ namespace core {
 			return false;
 		}
 
-		TerminateProcess(handle, 1);
+		bool res = TerminateProcess(handle, 1);
 		close();
-		return true;
+		return res;
 	}
 
 	void Process::close()
@@ -84,6 +83,6 @@ namespace core {
 	{
 		core::memset(&pe, 0, sizeof(pe));
 		pe.dwSize = sizeof(pe);
+		pe.th32ProcessID = -1;
 	}
-
 }

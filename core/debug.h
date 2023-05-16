@@ -4,10 +4,10 @@
 struct  debug
 {
 	debug(const WCHAR* str) {
-		size_t sz = lstrlenW(str);
+		DWORD sz = lstrlenW(str);
 		print(str, sz);
 	}
-	debug(const WCHAR* str, size_t len) {
+	debug(const WCHAR* str, DWORD len) {
 		print(str, len);
 	}
 

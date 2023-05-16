@@ -25,7 +25,6 @@ int entry()
 #endif
 {
 	core::memInit();
-	Sleep(500000000);
 
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
