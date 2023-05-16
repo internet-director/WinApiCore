@@ -7,6 +7,7 @@
 #include "config.h"
 #include "mem.h"
 #include "process.h"
+#include "debug.h"
 
 #ifdef _DEBUG
 #include <iostream>

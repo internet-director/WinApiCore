@@ -1,20 +1,8 @@
 #include <Windows.h>
-
+#include <core/debug.h>
 #include <core/mem.h>
 
 LPCWSTR black_list[] = { L".", L".." };
-
-int printConsole(LPCWSTR buffer, DWORD sz) 
-{
-	HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	if (hout == INVALID_HANDLE_VALUE) {
-		return -1;
-	}
-
-	WriteConsoleW(hout, buffer, sz, &sz, NULL);
-	return sz;
-}
 
 struct _config {
 	bool fullPrint = false;
@@ -79,8 +67,8 @@ int entry()
 				WCHAR skip[2] = { fd.cFileName[0], 0 };
 				if (!lstrcmpW(skip, L".")) continue;
 			}
-			printConsole(fd.cFileName, len);
-			printConsole(END, 2);
+			debug(fd.cFileName, len);
+			debug(END);
 		}
 	} while (FindNextFileW(hFile, &fd));
 

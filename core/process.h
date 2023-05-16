@@ -31,7 +31,7 @@ namespace core {
 
 			do {
 				if (comp(pe)) {
-					hResult = FALSE;
+					hResult = TRUE;
 					break;
 				}
 			} while ((hResult = Process32NextW(hSnapshot, &pe)));

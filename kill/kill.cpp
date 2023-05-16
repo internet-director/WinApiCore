@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include <core/mem.h>
+#include <core/debug.h>
 #include <core/process.h>
 
 #ifdef _DEBUG 
@@ -20,8 +21,12 @@ int entry()
 	if (proc.open(PROCESS_TERMINATE)) {
 		res = proc.kill();
 	}
-
-	res = false;
+	if(res) {
+		debug(L"done");
+	}
+	else {
+		debug(L"error");
+	}
 
 	return 0;
 }
