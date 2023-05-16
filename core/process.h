@@ -10,14 +10,26 @@ namespace core {
 
 	public:
 		/*
-		* search by process pid
+		* search thread by process pid
 		*/
-		constexpr static auto FINDT_BY_PID = [](const THREADENTRY32& te, int pid) {
+		constexpr static auto FINDT_BY_PARENT_PID = [](const THREADENTRY32& te, int pid) {
 			return te.th32OwnerProcessID == pid;
 		};
+		/*
+		* search thread by thread pid
+		*/
+		constexpr static auto FINDT_BY_PID = [](const THREADENTRY32& te, int pid) {
+			return te.th32ThreadID == pid;
+		};
+		/*
+		* search process by pid
+		*/
 		constexpr static auto FINDP_BY_PID = [](const PROCESSENTRY32W& pe, int pid) {
 			return pe.th32ProcessID == pid;
 		};
+		/*
+		* search process by name
+		*/
 		constexpr static auto FINDP_BY_NAME = [](const PROCESSENTRY32W pe, const WCHAR* processName) {
 			return lstrcmpW(processName, pe.szExeFile) == 0;
 		};

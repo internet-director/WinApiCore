@@ -11,7 +11,7 @@ namespace core {
 	Process::Process(int pid): Process()
 	{
 		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_PID, pid);
-		te = getEntry<THREADENTRY32>(FINDT_BY_PID, pid);
+		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pid);
 	}
 
 	Process::Process(const HANDLE handle) : Process()
@@ -22,7 +22,7 @@ namespace core {
 	Process::Process(const WCHAR* processName) : Process()
 	{
 		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName);
-		te = getEntry<THREADENTRY32>(FINDT_BY_PID, pe.th32ProcessID);
+		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pe.th32ProcessID);
 	}
 
 	Process::~Process()
@@ -97,7 +97,7 @@ namespace core {
 		if (pHandle != nullptr) CloseHandle(pHandle);
 		if (tHandle != nullptr) CloseHandle(tHandle);
 		pHandle = tHandle = nullptr;
-		initPEntry(pe);
-		initTEntry(te);
+		initEntry(pe);
+		initEntry(te);
 	}
 }
