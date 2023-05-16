@@ -42,4 +42,14 @@ typedef uint64_t size_t;
 #define MEM_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
 
+
+/*-------------------------------normal standart-------------------------------*/
+
+namespace core {
+	template <class, class>
+	constexpr bool is_same_v = false;
+	template <class _Ty>
+	constexpr bool is_same_v<_Ty, _Ty> = true;
+}
+
 #endif

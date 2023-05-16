@@ -18,8 +18,12 @@ int entry()
 
 	bool res = false;
 	core::Process proc(argv[1]);
-	if (proc.open(PROCESS_TERMINATE)) {
-		res = proc.kill();
+	if (proc.open()) {
+		res = proc.suspend();
+		Sleep(5000);
+		res = proc.resume();
+		Sleep(5000);
+		proc.kill();
 	}
 	if(res) {
 		debug(L"done");

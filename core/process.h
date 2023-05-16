@@ -3,14 +3,22 @@
 
 namespace core {
 	class PROCESS_EXPORT Process {
-		HANDLE handle;
+		HANDLE pHandle;
+		HANDLE tHandle;
+		THREADENTRY32 te;
 		PROCESSENTRY32W pe;
 
 	public:
-		constexpr static auto FIND_BY_PID = [](const PROCESSENTRY32W& pe, int pid) {
-			return pe.th32ProcessID == pid; 
+		/*
+		* search by process pid
+		*/
+		constexpr static auto FINDT_BY_PID = [](const THREADENTRY32& te, int pid) {
+			return te.th32OwnerProcessID == pid;
 		};
-		constexpr static auto FIND_BY_NAME = [](const PROCESSENTRY32W pe, const WCHAR* processName) {
+		constexpr static auto FINDP_BY_PID = [](const PROCESSENTRY32W& pe, int pid) {
+			return pe.th32ProcessID == pid;
+		};
+		constexpr static auto FINDP_BY_NAME = [](const PROCESSENTRY32W pe, const WCHAR* processName) {
 			return lstrcmpW(processName, pe.szExeFile) == 0;
 		};
 
@@ -22,52 +30,113 @@ namespace core {
 
 		int getPid() const;
 		const WCHAR* getName() const;
-		static int getPid(int pid);
 		static int getPid(const WCHAR* processName);
 
-		template<class Compare, class Compared>
-		static PROCESSENTRY32W getPEntry(const Compare& pred, Compared comp) {
-			PROCESSENTRY32W pe;
-			initPEntry(pe);
+		template<typename T, class Compare, class Compared>
+		static T getEntry(const Compare& pred, Compared comp)
+			requires(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) 
+		{
+			T pe;
+			BOOL hResult;
+			initEntry(pe);
 
-			HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-			if (INVALID_HANDLE_VALUE == hSnapshot) {
+			int code = TH32CS_SNAPPROCESS;
+
+			if constexpr (core::is_same_v<T, THREADENTRY32>) 
+			{
+				code = TH32CS_SNAPTHREAD;
+			}
+
+			HANDLE hSnapshot = CreateToolhelp32Snapshot(code, 0);
+
+			if (INVALID_HANDLE_VALUE == hSnapshot) 
+			{
 				return pe;
 			}
 
-			BOOL hResult = Process32FirstW(hSnapshot, &pe);
+			if constexpr (core::is_same_v<T, THREADENTRY32>) {
+				hResult = Thread32First(hSnapshot, &pe);
+			}
+			else {
+				hResult = Process32FirstW(hSnapshot, &pe);
+			}
 
-			do {
-				if (pred(pe, comp)) {
+			do 
+			{
+				if (pred(pe, comp))
+				{
 					hResult = TRUE;
 					break;
 				}
-			} while ((hResult = Process32NextW(hSnapshot, &pe)));
+
+				if constexpr (core::is_same_v<T, THREADENTRY32>) {
+					hResult = Thread32Next(hSnapshot, &pe);
+				}
+				else {
+					hResult = Process32NextW(hSnapshot, &pe);
+				}
+			} while (hResult);
 
 			CloseHandle(hSnapshot);
-			if (hResult == FALSE) {
-				initPEntry(pe);
+			if (hResult == FALSE) 
+			{
+				initEntry(pe);
 			}
 			return pe;
 		}
 
 		/*
-		@return false if handle opened or failed, true if done
+		* open process handle, if tAccess dont set, use pAccess for all
+		* @return false if handle opened or failed, true if done
 		*/
-		bool open(int accecc = PROCESS_ALL_ACCESS);
+		bool open(int pAccess = PROCESS_ALL_ACCESS, int tAccess = -1);
+
 		/*
-		@return false if handle dont opened of failed, true if done
+		* handle must be THREAD_SUSPEND_RESUME
+		* return true if process suspended, false in other
+		*/
+		bool suspend();
+
+		/*
+		* handle must be THREAD_SUSPEND_RESUME
+		* return true if process resumed, false in other
+		*/
+		bool resume();
+
+		/*
+		* @return false if handle dont opened of failed, true if done
 		*/
 		bool kill();
+
 		/*
-		close handle if opened
+		* close handle if opened
 		*/
 		void close();
 
 		/*
-		fill PROCESSENTRY32W seroes, init dwSize, set pid as -1
+		* fill THREADENTRY32 seroes, init dwSize, set pid as -1
 		*/
-		static void initPEntry(PROCESSENTRY32W& pe);
+		static void initTEntry(THREADENTRY32& te) { initEntry(te); }
+
+		/*
+		* fill PROCESSENTRY32W seroes, init dwSize, set pid as -1
+		*/
+		static void initPEntry(PROCESSENTRY32W& pe) { initEntry(pe); }
+
+		template<typename T>
+		static void initEntry(T& te)
+			requires(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) {
+			core::memset(&te, 0, sizeof(te));
+			te.dwSize = sizeof(te);
+
+			if constexpr (core::is_same_v<T, THREADENTRY32>) {
+				te.th32ThreadID = -1;
+			}
+			else {
+				te.th32ProcessID = -1;
+			}
+
+		}
 	};
 
 }

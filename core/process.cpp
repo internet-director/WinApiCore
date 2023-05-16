@@ -10,17 +10,19 @@ namespace core {
 
 	Process::Process(int pid): Process()
 	{
-		pe = getPEntry(FIND_BY_PID, pid);
+		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_PID, pid);
+		te = getEntry<THREADENTRY32>(FINDT_BY_PID, pid);
 	}
 
 	Process::Process(const HANDLE handle) : Process()
 	{
-		this->handle = handle;
+		this->pHandle = handle;
 	}
 
 	Process::Process(const WCHAR* processName) : Process()
 	{
-		pe = getPEntry(FIND_BY_NAME, processName);
+		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName);
+		te = getEntry<THREADENTRY32>(FINDT_BY_PID, pe.th32ProcessID);
 	}
 
 	Process::~Process()
@@ -28,14 +30,9 @@ namespace core {
 		close();
 	}
 
-	int Process::getPid(int pid)
-	{
-		return getPEntry(FIND_BY_PID, pid).th32ProcessID;
-	}
-
 	int Process::getPid(const WCHAR* processName)
 	{
-		return getPEntry(FIND_BY_NAME, processName).th32ProcessID;
+		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).th32ProcessID;
 	}
 
 	int Process::getPid() const
@@ -51,38 +48,56 @@ namespace core {
 		return pe.szExeFile;
 	}
 
-	bool Process::open(int access)
+	bool Process::open(int pAccess, int tAccess)
 	{
-		if (handle != nullptr) {
+		if (tAccess == -1) tAccess = pAccess;
+
+		if (pHandle == nullptr) {
+			pHandle = OpenProcess(pAccess, FALSE, pe.th32ProcessID);
+		}
+		if (tHandle == nullptr) {
+			tHandle = OpenThread(tAccess, FALSE, te.th32ThreadID);
+		}
+
+		return pHandle != nullptr && 
+			tHandle != nullptr;
+	}
+
+	bool Process::suspend()
+	{
+		if (pHandle == nullptr) {
 			return false;
 		}
 
-		handle = OpenProcess(access, FALSE, pe.th32ProcessID);
-		return handle != nullptr;
+		return SuspendThread(tHandle) != -1;
+	}
+
+	bool Process::resume()
+	{
+		if (pHandle == nullptr) {
+			return false;
+		}
+
+		return ResumeThread(tHandle) != -1;
 	}
 
 	bool Process::kill()
 	{
-		if (handle == nullptr) {
+		if (pHandle == nullptr) {
 			return false;
 		}
 
-		bool res = TerminateProcess(handle, 1);
+		bool res = TerminateProcess(pHandle, 1);
 		close();
 		return res;
 	}
 
 	void Process::close()
 	{
-		if (handle != nullptr) CloseHandle(handle);
-		handle = nullptr;
+		if (pHandle != nullptr) CloseHandle(pHandle);
+		if (tHandle != nullptr) CloseHandle(tHandle);
+		pHandle = tHandle = nullptr;
 		initPEntry(pe);
-	}
-
-	void Process::initPEntry(PROCESSENTRY32W& pe)
-	{
-		core::memset(&pe, 0, sizeof(pe));
-		pe.dwSize = sizeof(pe);
-		pe.th32ProcessID = -1;
+		initTEntry(te);
 	}
 }
