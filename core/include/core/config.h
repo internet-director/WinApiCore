@@ -3,19 +3,30 @@
 #include <Windows.h>
 #include <tlhelp32.h>
 
-typedef signed char        int8_t;
-typedef short              int16_t;
-typedef int                int32_t;
-typedef long long          int64_t;
-typedef unsigned char      uint8_t;
-typedef unsigned short     uint16_t;
-typedef unsigned int       uint32_t;
-typedef unsigned long long uint64_t;
+namespace core {
+	typedef signed char        int8_t;
+	typedef short              int16_t;
+	typedef int                int32_t;
+	typedef long long          int64_t;
+	typedef unsigned char      uint8_t;
+	typedef unsigned short     uint16_t;
+	typedef unsigned int       uint32_t;
+	typedef unsigned long long uint64_t;
+}
+
+typedef core::int8_t	int8_t;
+typedef core::int16_t	int16_t;
+typedef core::int32_t	int32_t;
+typedef core::int64_t	int64_t;
+typedef core::uint8_t	uint8_t;
+typedef core::uint16_t	uint16_t;
+typedef core::uint32_t	uint32_t;
+typedef core::uint64_t	uint64_t;
 
 #ifndef _WIN64
-typedef uint32_t size_t;
+typedef core::uint32_t size_t;
 #else
-typedef uint64_t size_t;
+typedef core::uint64_t size_t;
 #endif
 
 // These macros must exactly match those in the Windows SDK's intsafe.h.
