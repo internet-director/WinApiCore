@@ -32,7 +32,7 @@ int entry()
 		return 1;
 	}
 
-	LPWSTR buffer = static_cast<LPWSTR>(core::alloc((INT16_MAX + 6) * sizeof(WCHAR)));
+	LPWSTR buffer = core::talloc<WCHAR>(INT16_MAX + 6);
 	if (buffer == nullptr) {
 		return 1;
 	}

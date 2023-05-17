@@ -6,6 +6,7 @@
 #include <tlhelp32.h>
 #include "config.h"
 #include "mem.h"
+#include "thread.h"
 #include "process.h"
 #include "debug.h"
 

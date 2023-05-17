@@ -3,7 +3,7 @@
 
 namespace core {
 
-	Process::Process()
+	Process::Process() noexcept: pHandle(nullptr), tHandle(nullptr)
 	{
 		close();
 	}
@@ -14,10 +14,10 @@ namespace core {
 		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pid);
 	}
 
-	Process::Process(const HANDLE handle) : Process()
+	/*Process::Process(const HANDLE handle) : Process()
 	{
 		this->pHandle = handle;
-	}
+	}*/
 
 	Process::Process(const WCHAR* processName) : Process()
 	{
@@ -25,14 +25,18 @@ namespace core {
 		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pe.th32ProcessID);
 	}
 
+	Process::Process(Process&& other) noexcept: Process()
+	{
+		pe = core::move(other.pe);
+		te = core::move(other.te);
+		pHandle = core::move(other.pHandle);
+		tHandle = core::move(other.tHandle);
+		other.close();
+	}
+
 	Process::~Process()
 	{
 		close();
-	}
-
-	int Process::getPid(const WCHAR* processName)
-	{
-		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).th32ProcessID;
 	}
 
 	int Process::getPid() const
@@ -40,9 +44,14 @@ namespace core {
 		return pe.th32ProcessID;
 	}
 
+	int Process::getPid(const WCHAR* processName)
+	{
+		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).th32ProcessID;
+	}
+
 	const WCHAR* Process::getName() const
 	{
-		if (pe.dwSize == 0) {
+		if (pe.th32ProcessID == -1) {
 			return nullptr;
 		}
 		return pe.szExeFile;
@@ -59,8 +68,18 @@ namespace core {
 			tHandle = OpenThread(tAccess, FALSE, te.th32ThreadID);
 		}
 
-		return pHandle != nullptr && 
+		return isOpen();
+	}
+
+	bool Process::isOpen() const noexcept
+	{
+		return pHandle != nullptr &&
 			tHandle != nullptr;
+	}
+
+	bool Process::isExist() const
+	{
+		return getPid() != -1;
 	}
 
 	bool Process::suspend()

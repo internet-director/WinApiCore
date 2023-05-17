@@ -34,19 +34,24 @@ namespace core {
 			return lstrcmpW(processName, pe.szExeFile) == 0;
 		};
 
-		Process();
+		Process() noexcept;
 		Process(int pid);
-		Process(const HANDLE handle);
+		//Process(const HANDLE handle);
 		Process(const WCHAR* processName);
+		Process(Process&& other) noexcept;
 		~Process();
 
 		int getPid() const;
 		const WCHAR* getName() const;
 		static int getPid(const WCHAR* processName);
 
-		template<typename T, class Compare, class Compared>
-		static T getEntry(const Compare& pred, Compared comp)
-			requires(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) 
+		/*
+		* @return THREADENTRY32/PROCESSENTRY32W on predicate and additional variable,
+		* predicate is a function with THREADENTRY32/PROCESSENTRY32W and an additional variable
+		*/
+		template<typename T, class Predicate, class Additional>
+		static T getEntry(const Predicate& pred, Additional comp)
+			requires(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>)
 		{
 			T pe;
 			BOOL hResult;
@@ -54,14 +59,14 @@ namespace core {
 
 			int code = TH32CS_SNAPPROCESS;
 
-			if constexpr (core::is_same_v<T, THREADENTRY32>) 
+			if constexpr (core::is_same_v<T, THREADENTRY32>)
 			{
 				code = TH32CS_SNAPTHREAD;
 			}
 
 			HANDLE hSnapshot = CreateToolhelp32Snapshot(code, 0);
 
-			if (INVALID_HANDLE_VALUE == hSnapshot) 
+			if (INVALID_HANDLE_VALUE == hSnapshot)
 			{
 				return pe;
 			}
@@ -73,7 +78,7 @@ namespace core {
 				hResult = Process32FirstW(hSnapshot, &pe);
 			}
 
-			do 
+			do
 			{
 				if (pred(pe, comp))
 				{
@@ -90,7 +95,7 @@ namespace core {
 			} while (hResult);
 
 			CloseHandle(hSnapshot);
-			if (hResult == FALSE) 
+			if (hResult == FALSE)
 			{
 				initEntry(pe);
 			}
@@ -102,6 +107,10 @@ namespace core {
 		* @return false if handle opened or failed, true if done
 		*/
 		bool open(int pAccess = PROCESS_ALL_ACCESS, int tAccess = -1);
+
+		bool isOpen() const noexcept;
+
+		bool isExist() const;
 
 		/*
 		* handle must be THREAD_SUSPEND_RESUME
@@ -128,16 +137,16 @@ namespace core {
 		/*
 		* fill THREADENTRY32 seroes, init dwSize, set pid as -1
 		*/
-		static void initTEntry(THREADENTRY32& te) { initEntry(te); }
+		static void initTEntry(THREADENTRY32& te) noexcept { initEntry(te); }
 
 		/*
 		* fill PROCESSENTRY32W seroes, init dwSize, set pid as -1
 		*/
-		static void initPEntry(PROCESSENTRY32W& pe) { initEntry(pe); }
+		static void initPEntry(PROCESSENTRY32W& pe) noexcept { initEntry(pe); }
 
+	private:
 		template<typename T>
-		static void initEntry(T& te)
-			requires(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) {
+		static void initEntry(T& te) noexcept(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) {
 			core::memset(&te, 0, sizeof(te));
 			te.dwSize = sizeof(te);
 
@@ -147,8 +156,6 @@ namespace core {
 			else {
 				te.th32ProcessID = -1;
 			}
-
 		}
 	};
-
 }

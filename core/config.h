@@ -40,8 +40,8 @@ typedef uint64_t size_t;
 /*-----------------------------export dll settinds-----------------------------*/
 
 #define MEM_EXPORT __declspec(dllexport)
+#define THREAD_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
-
 
 /*-------------------------------normal standart-------------------------------*/
 
@@ -50,6 +50,32 @@ namespace core {
 	constexpr bool is_same_v = false;
 	template <class _Ty>
 	constexpr bool is_same_v<_Ty, _Ty> = true;
+
+	template <class _Ty>
+		struct remove_reference {
+		using type = _Ty;
+		using _Const_thru_ref_type = const _Ty;
+	};
+
+	template <class _Ty>
+	struct remove_reference<_Ty&> {
+		using type = _Ty;
+		using _Const_thru_ref_type = const _Ty&;
+	};
+
+	template <class _Ty>
+	struct remove_reference<_Ty&&> {
+		using type = _Ty;
+		using _Const_thru_ref_type = const _Ty&&;
+	};
+
+	template <class _Ty>
+		using remove_reference_t = typename remove_reference<_Ty>::type;
+
+	template <class _Ty>
+	constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {
+		return static_cast<remove_reference_t<_Ty>&&>(_Arg);
+	}
 }
 
 #endif
