@@ -9,6 +9,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ls", "ls\ls.vcxproj", "{96C
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "core\core.vcxproj", "{7A2693F9-D9E3-43B4-ABB0-AE4D95E02717}"
+	ProjectSection(ProjectDependencies) = postProject
+		{266F2921-E9F4-48B2-B1BF-1028230E3F0D} = {266F2921-E9F4-48B2-B1BF-1028230E3F0D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kill", "kill\kill.vcxproj", "{0D112764-32AE-4932-951C-F5DB36C1DE0C}"
 	ProjectSection(ProjectDependencies) = postProject

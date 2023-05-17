@@ -4,7 +4,7 @@
 namespace core {
 
 	Process::Process() noexcept: pHandle(nullptr), tHandle(nullptr)
-	{
+	{	
 		close();
 	}
 

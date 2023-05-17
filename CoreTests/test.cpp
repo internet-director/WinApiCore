@@ -41,18 +41,23 @@ TEST(ProcessTest, WrongInitiallyByName) {
 	EXPECT_NO_THROW(process.close());
 }
 
-TEST(ProcessTest, MoveConstructor) {
-	core::Process process1(-1);
-	core::Process process2(std::move(process1));
+TEST(ProcessTest, FindWaiterByPid) {
+	STARTUPINFO si{};
+	PROCESS_INFORMATION pi{};
+	EXPECT_TRUE(runWaiter(si, pi)) << "Unable to start the waiter.exe, maybe you should check the path to it";
 
-	EXPECT_EQ(process1.getPid(), -1);
-	EXPECT_EQ(process1.getName(), nullptr);
-	EXPECT_FALSE(process1.isOpen());
-	EXPECT_FALSE(process1.isExist());
+	core::Process process(pi.dwProcessId);
 
-	EXPECT_FALSE(process1.open());
-	EXPECT_FALSE(process1.kill());
-	EXPECT_FALSE(process1.suspend());
-	EXPECT_FALSE(process1.resume());
-	EXPECT_NO_THROW(process1.close());
+	EXPECT_EQ(process.getPid(), pi.dwProcessId);
+	EXPECT_FALSE(process.isOpen());
+	EXPECT_TRUE(process.isExist());
+
+	EXPECT_TRUE(process.open());
+	EXPECT_TRUE(process.isOpen());
+	EXPECT_TRUE(process.resume());
+	bool suspendResult = process.suspend();
+	EXPECT_EQ(process.resume(), suspendResult);
+	EXPECT_TRUE(process.kill());
+
+	killWaiter(si, pi);
 }
