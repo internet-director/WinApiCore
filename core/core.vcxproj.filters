@@ -21,19 +21,19 @@
     <ClInclude Include="pch.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="process.h">
+    <ClInclude Include="include\core\process.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="mem.h">
+    <ClInclude Include="include\core\mem.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
+    <ClInclude Include="include\core\config.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="debug.h">
+    <ClInclude Include="include\core\debug.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="thread.h">
+    <ClInclude Include="include\core\thread.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,16 +44,16 @@
     <ClCompile Include="pch.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="mem.cpp">
+    <ClCompile Include="source\mem.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="process.cpp">
+    <ClCompile Include="source\process.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="debug.cpp">
+    <ClCompile Include="source\debug.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="thread.cpp">
+    <ClCompile Include="source\thread.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

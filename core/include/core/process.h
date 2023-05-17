@@ -1,5 +1,6 @@
 #pragma once
-#include "framework.h"
+#include <core/config.h>
+#include <core/mem.h>
 
 namespace core {
 	class PROCESS_EXPORT Process {

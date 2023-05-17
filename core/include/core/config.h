@@ -1,6 +1,7 @@
 #ifndef _CONFIG_HDR
 #define _CONFIG_HDR
 #include <Windows.h>
+#include <tlhelp32.h>
 
 typedef signed char        int8_t;
 typedef short              int16_t;
