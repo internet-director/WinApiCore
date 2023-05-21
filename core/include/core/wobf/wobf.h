@@ -35,8 +35,8 @@ namespace wobf {
         return hash;
     }
 
-	void Init();
-	LPVOID GetFuncAddrByHash(size_t lib, uint32_t hash);
+    WOBF_EXPORT void Init();
+    WOBF_EXPORT LPVOID GetFuncAddrByHash(size_t lib, uint32_t hash);
 }
 
 constexpr unsigned int hashKERNEL32 = wobf::constexprApiHash("kernel32.dll");
@@ -44,7 +44,7 @@ constexpr unsigned int hashNTDLL = wobf::constexprApiHash("ntdll.dll");
 constexpr unsigned int hashLoadLibraryA = wobf::constexprApiHash("LoadLibraryA");
 constexpr unsigned int hashGetProcAddress = wobf::constexprApiHash("GetProcAddress");
 
-#ifdef USE_WOBF
+#ifdef USE_WINDOWS_DYNAMIC_IMPORT
 #define API(dll, func) (reinterpret_cast<core::decay_t<decltype(func)>>(wobf::GetFuncAddrByHash(dll, wobf::constexprApiHash(# func))))
 #else
 #define API(dll, func) func

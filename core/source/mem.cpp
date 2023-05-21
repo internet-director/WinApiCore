@@ -6,7 +6,7 @@ HANDLE proc_heap;
 namespace core {
 	
 	void memInit() {
-		proc_heap = GetProcessHeap();
+		proc_heap = API(KERNEL32, GetProcessHeap)();
 	}
 	void* memcpy(void* dst, const void* src, size_t sz) {
 		for (volatile size_t i = 0; i < sz; i++) {
@@ -38,11 +38,11 @@ namespace core {
 
 	void* alloc(size_t sz)
 	{
-		return HeapAlloc(proc_heap, NULL, sz);
+		return API(KERNEL32, HeapAlloc)(proc_heap, NULL, sz);
 	}
 
 	int free(void* heap)
 	{
-		return HeapFree(proc_heap, NULL, heap);
+		return API(KERNEL32, HeapFree)(proc_heap, NULL, heap);
 	}
 }

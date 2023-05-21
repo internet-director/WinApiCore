@@ -57,7 +57,7 @@ typedef core::uint64_t size_t;
 
 /*---------------------------------dll settind---------------------------------*/
 
-#define USE_WOBF
+#define USE_WINDOWS_DYNAMIC_IMPORT
 
 #define MEM_EXPORT __declspec(dllexport)
 #define THREAD_EXPORT __declspec(dllexport)
