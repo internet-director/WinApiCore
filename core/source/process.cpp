@@ -67,20 +67,25 @@ namespace core {
 		open(monitor.getPid(), monitor.getTid(), pAccess, tAccess);
 	}
 
-	/*Process::Process(const HANDLE handle) : Process()
-	{
-		this->pHandle = handle;
-	}*/
-
 	Process::Process(const WCHAR* processName, int pAccess, int tAccess) : Process()
 	{
 		
 	}
 
-	/*Process::Process(Process&& other) noexcept : Process()
+	Process::Process(Process&& other) noexcept : Process()
 	{
+		swap(*this, other);
+	}
 
-	}*/
+	Process& Process::operator=(Process&& other) noexcept
+	{
+		if (this == &other) {
+			return *this;
+		}
+		Process process(core::move(other));
+		swap(*this, process);
+		return *this;
+	}
 
 	Process::~Process()
 	{
@@ -104,9 +109,13 @@ namespace core {
 		return isOpen();
 	}
 
-	bool Process::run(const WCHAR* exetutable, int creationFlag)
+	bool Process::run(const WCHAR* exetutable, WCHAR* args, int creationFlag)
 	{
-		return CreateProcessW(exetutable, 0, 0, 0, 0, creationFlag, 0, 0, &si, &pi);
+		bool res = static_cast<bool>(CreateProcessW(exetutable, args, 0, 0, 0, creationFlag, 0, 0, &si, &pi));
+		if (!res) {
+			clearHandle();
+		}
+		return res;
 	}
 
 	bool Process::hollowing(const WCHAR* name)
@@ -120,20 +129,12 @@ namespace core {
 
 	bool Process::suspend()
 	{
-		if (!isOpen()) {
-			return false;
-		}
-
-		return SuspendThread(pi.hThread) != -1;
+		return isOpen() ? SuspendThread(pi.hThread) != -1 : false;
 	}
 
 	bool Process::resume()
 	{
-		if (!isOpen()) {
-			return false;
-		}
-
-		return ResumeThread(pi.hThread) != -1;
+		return  isOpen() ? ResumeThread(pi.hThread) != -1 : false;
 	}
 
 	bool Process::kill()
@@ -159,5 +160,10 @@ namespace core {
 		core::zeromem(&pi, sizeof pi);
 		si.cb = sizeof STARTUPINFO;
 		pi.dwProcessId = pi.dwThreadId = -1;
+	}
+	void Process::swap(Process& a, Process& b) noexcept
+	{
+		core::swap(a.si, b.si);
+		core::swap(a.pi, b.pi);
 	}
 }

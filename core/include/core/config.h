@@ -89,6 +89,12 @@ namespace core {
 	constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {
 		return static_cast<remove_reference_t<_Ty>&&>(_Arg);
 	}
+
+	template<typename T> void swap(T& t1, T& t2) noexcept  {
+		T temp = core::move(t1);
+		t1 = core::move(t2);
+		t2 = core::move(temp);
+	}
 }
 
 #endif

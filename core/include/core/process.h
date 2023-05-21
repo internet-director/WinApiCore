@@ -137,9 +137,9 @@ namespace core {
 	public:
 		Process();
 		Process(int pid, int pAccess = -1, int tAccess = -1);
-		//Process(const HANDLE handle);
 		Process(const WCHAR* processName, int pAccess = -1, int tAccess = -1);
-		//Process(Process&& other) noexcept;
+		Process(Process&& other) noexcept;
+		Process& operator=(Process&& other) noexcept;
 		~Process();
 
 		int getPid() const noexcept { return pi.dwProcessId; }
@@ -151,7 +151,7 @@ namespace core {
 		*/
 		bool open(int pId, int tId, int pAccess = PROCESS_ALL_ACCESS, int tAccess = -1);
 
-		bool run(const WCHAR* exetutable, int creationFlag = 0);
+		bool run(const WCHAR* exetutable, WCHAR* args = nullptr, int creationFlag = 0);
 
 		bool isOpen() const noexcept { return pi.hProcess != nullptr && pi.hThread != nullptr; }
 
@@ -181,5 +181,7 @@ namespace core {
 
 	private:
 		void clearHandle();
+
+		void swap(Process& a, Process& b) noexcept;
 	};
 }
