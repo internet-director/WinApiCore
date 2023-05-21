@@ -54,6 +54,7 @@ typedef core::uint64_t size_t;
 #define MEM_EXPORT __declspec(dllexport)
 #define THREAD_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
+#define PROCESS_MONITOR_EXPORT __declspec(dllexport)
 
 /*-------------------------------normal standart-------------------------------*/
 

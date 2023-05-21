@@ -3,12 +3,9 @@
 #include <core/mem.h>
 
 namespace core {
-	class PROCESS_EXPORT Process {
-		HANDLE pHandle;
-		HANDLE tHandle;
+	class PROCESS_MONITOR_EXPORT ProcessMonitor {
 		THREADENTRY32 te;
 		PROCESSENTRY32W pe;
-
 	public:
 		/*
 		* search thread by process pid
@@ -35,16 +32,18 @@ namespace core {
 			return lstrcmpW(processName, pe.szExeFile) == 0;
 		};
 
-		Process() noexcept;
-		Process(int pid);
-		//Process(const HANDLE handle);
-		Process(const WCHAR* processName);
-		Process(Process&& other) noexcept;
-		~Process();
+		ProcessMonitor() noexcept;
+		ProcessMonitor(int pid);
+		ProcessMonitor(const WCHAR* processName);
 
-		int getPid() const;
-		const WCHAR* getName() const;
+		int getPid();
+		int getTid();
 		static int getPid(const WCHAR* processName);
+		static int getTid(const WCHAR* processName);
+		const WCHAR* getName() const;
+		static const WCHAR* getName(const WCHAR* processName);
+
+		bool isExist() { return getPid() != -1; }
 
 		/*
 		* @return THREADENTRY32/PROCESSENTRY32W on predicate and additional variable,
@@ -103,15 +102,60 @@ namespace core {
 			return pe;
 		}
 
+
 		/*
-		* open process handle, if tAccess dont set, use pAccess for all
+		* fill THREADENTRY32 seroes, init dwSize, set pid as -1
+		*/
+		static void initTEntry(THREADENTRY32& te) noexcept { initEntry(te); }
+
+		/*
+		* fill PROCESSENTRY32W seroes, init dwSize, set pid as -1
+		*/
+		static void initPEntry(PROCESSENTRY32W& pe) noexcept { initEntry(pe); }
+
+		void clear() noexcept;
+
+	private:
+		template<typename T>
+		static void initEntry(T& te) noexcept(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) {
+			core::memset(&te, 0, sizeof te);
+			te.dwSize = sizeof te;
+
+			if constexpr (core::is_same_v<T, THREADENTRY32>) {
+				te.th32ThreadID = -1;
+			}
+			else {
+				te.th32ProcessID = -1;
+			}
+		}
+	};
+
+	class PROCESS_EXPORT Process {
+		STARTUPINFOW si;
+		PROCESS_INFORMATION pi;
+
+	public:
+		Process();
+		Process(int pid, int pAccess = -1, int tAccess = -1);
+		//Process(const HANDLE handle);
+		Process(const WCHAR* processName, int pAccess = -1, int tAccess = -1);
+		//Process(Process&& other) noexcept;
+		~Process();
+
+		int getPid() const noexcept { return pi.dwProcessId; }
+		int getTid() const noexcept { return pi.dwThreadId; }
+
+		/*
+		* reopen process handle, if tAccess dont set, use pAccess for all
 		* @return false if handle opened or failed, true if done
 		*/
-		bool open(int pAccess = PROCESS_ALL_ACCESS, int tAccess = -1);
+		bool open(int pId, int tId, int pAccess = PROCESS_ALL_ACCESS, int tAccess = -1);
 
-		bool isOpen() const noexcept;
+		bool run(const WCHAR* exetutable, int creationFlag = 0);
 
-		bool isExist() const;
+		bool isOpen() const noexcept { return pi.hProcess != nullptr && pi.hThread != nullptr; }
+
+		bool hollowing(const WCHAR* name);
 
 		/*
 		* handle must be THREAD_SUSPEND_RESUME
@@ -135,28 +179,7 @@ namespace core {
 		*/
 		void close();
 
-		/*
-		* fill THREADENTRY32 seroes, init dwSize, set pid as -1
-		*/
-		static void initTEntry(THREADENTRY32& te) noexcept { initEntry(te); }
-
-		/*
-		* fill PROCESSENTRY32W seroes, init dwSize, set pid as -1
-		*/
-		static void initPEntry(PROCESSENTRY32W& pe) noexcept { initEntry(pe); }
-
 	private:
-		template<typename T>
-		static void initEntry(T& te) noexcept(core::is_same_v<T, THREADENTRY32> || core::is_same_v<T, PROCESSENTRY32W>) {
-			core::memset(&te, 0, sizeof(te));
-			te.dwSize = sizeof(te);
-
-			if constexpr (core::is_same_v<T, THREADENTRY32>) {
-				te.th32ThreadID = -1;
-			}
-			else {
-				te.th32ProcessID = -1;
-			}
-		}
+		void clearHandle();
 	};
 }

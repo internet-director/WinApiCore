@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{d73deaf5-848a-495f-8ca9-43236ee671fd}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -42,7 +42,7 @@
     <LibraryPath>$(SolutionDir)\bin\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\bin\shit\$(ProjectName)</IntDir>
-    <IncludePath>$(SolutionDir)\core\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\core\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>$(SolutionDir)\bin\;$(LibraryPath)</LibraryPath>
@@ -54,13 +54,14 @@
     <LibraryPath>$(SolutionDir)\bin\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)\bin\</OutDir>
     <IntDir>$(SolutionDir)\bin\shit\$(ProjectName)</IntDir>
-    <IncludePath>$(SolutionDir)\core\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\core\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="test.cpp" />
+    <ClCompile Include="memTest.cpp" />
+    <ClCompile Include="procTest.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

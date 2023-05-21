@@ -2,16 +2,69 @@
 #include "process.h"
 
 namespace core {
-
-	Process::Process() noexcept: pHandle(nullptr), tHandle(nullptr)
-	{	
-		close();
+	ProcessMonitor::ProcessMonitor() noexcept
+	{
+		clear();
 	}
-
-	Process::Process(int pid): Process()
+	ProcessMonitor::ProcessMonitor(int pid): ProcessMonitor()
 	{
 		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_PID, pid);
 		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pid);
+	}
+	ProcessMonitor::ProcessMonitor(const WCHAR* processName): ProcessMonitor()
+	{
+		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName);
+		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pe.th32ProcessID);
+	}
+	int ProcessMonitor::getPid()
+	{
+		return pe.th32ProcessID;
+	}
+	int ProcessMonitor::getTid()
+	{
+		return te.th32ThreadID;
+	}
+	int ProcessMonitor::getPid(const WCHAR* processName)
+	{
+		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).th32ProcessID;
+	}
+	int ProcessMonitor::getTid(const WCHAR* processName)
+	{
+		return -1;
+	}
+	const WCHAR* ProcessMonitor::getName() const
+	{
+		if (pe.th32ProcessID == -1) {
+			return nullptr;
+		}
+		return pe.szExeFile;
+	}
+	const WCHAR* ProcessMonitor::getName(const WCHAR* processName)
+	{
+		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).szExeFile;
+	}
+	void ProcessMonitor::clear() noexcept
+	{
+		initPEntry(pe);
+		initTEntry(te);
+	}
+
+
+	Process::Process()
+	{	
+		clearHandle();
+	}
+
+	Process::Process(int pid, int pAccess, int tAccess): Process()
+	{
+		ProcessMonitor monitor(pid);
+		if (!monitor.isExist()) {
+			return;
+		}
+		if (pAccess == -1) pAccess = tAccess = PROCESS_ALL_ACCESS;
+		if (tAccess == -1) tAccess = pAccess;
+
+		open(monitor.getPid(), monitor.getTid(), pAccess, tAccess);
 	}
 
 	/*Process::Process(const HANDLE handle) : Process()
@@ -19,104 +72,92 @@ namespace core {
 		this->pHandle = handle;
 	}*/
 
-	Process::Process(const WCHAR* processName) : Process()
+	Process::Process(const WCHAR* processName, int pAccess, int tAccess) : Process()
 	{
-		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName);
-		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pe.th32ProcessID);
+		
 	}
 
-	Process::Process(Process&& other) noexcept: Process()
+	/*Process::Process(Process&& other) noexcept : Process()
 	{
-		pe = core::move(other.pe);
-		te = core::move(other.te);
-		pHandle = core::move(other.pHandle);
-		tHandle = core::move(other.tHandle);
-		other.close();
-	}
+
+	}*/
 
 	Process::~Process()
 	{
-		close();
+		clearHandle();
 	}
 
-	int Process::getPid() const
+	bool Process::open(int pId, int tId, int pAccess, int tAccess)
 	{
-		return pe.th32ProcessID;
-	}
+		if (ProcessMonitor::getEntry<THREADENTRY32>(ProcessMonitor::FINDT_BY_PID, tId).th32ThreadID == -1 ||
+			ProcessMonitor::getEntry<PROCESSENTRY32W>(ProcessMonitor::FINDP_BY_PID, pId).th32ProcessID == -1) return false;
 
-	int Process::getPid(const WCHAR* processName)
-	{
-		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).th32ProcessID;
-	}
-
-	const WCHAR* Process::getName() const
-	{
-		if (pe.th32ProcessID == -1) {
-			return nullptr;
-		}
-		return pe.szExeFile;
-	}
-
-	bool Process::open(int pAccess, int tAccess)
-	{
 		if (tAccess == -1) tAccess = pAccess;
 
-		if (pHandle == nullptr) {
-			pHandle = OpenProcess(pAccess, FALSE, pe.th32ProcessID);
-		}
-		if (tHandle == nullptr) {
-			tHandle = OpenThread(tAccess, FALSE, te.th32ThreadID);
-		}
+		clearHandle();
+
+		pi.dwProcessId = pId;
+		pi.dwThreadId = tId;
+		pi.hProcess = OpenProcess(pAccess, FALSE, pId);
+		pi.hThread = OpenThread(tAccess, FALSE, tId);
 
 		return isOpen();
 	}
 
-	bool Process::isOpen() const noexcept
+	bool Process::run(const WCHAR* exetutable, int creationFlag)
 	{
-		return pHandle != nullptr &&
-			tHandle != nullptr;
+		return CreateProcessW(exetutable, 0, 0, 0, 0, creationFlag, 0, 0, &si, &pi);
 	}
 
-	bool Process::isExist() const
+	bool Process::hollowing(const WCHAR* name)
 	{
-		return getPid() != -1;
+		if (isOpen()) {
+			return false;
+		}
+
+		return true;
 	}
 
 	bool Process::suspend()
 	{
-		if (pHandle == nullptr) {
+		if (!isOpen()) {
 			return false;
 		}
 
-		return SuspendThread(tHandle) != -1;
+		return SuspendThread(pi.hThread) != -1;
 	}
 
 	bool Process::resume()
 	{
-		if (pHandle == nullptr) {
+		if (!isOpen()) {
 			return false;
 		}
 
-		return ResumeThread(tHandle) != -1;
+		return ResumeThread(pi.hThread) != -1;
 	}
 
 	bool Process::kill()
 	{
-		if (pHandle == nullptr) {
+		if (!isOpen()) {
 			return false;
 		}
 
-		bool res = TerminateProcess(pHandle, 1);
+		bool res = TerminateProcess(pi.hProcess, 1);
 		close();
 		return res;
 	}
 
 	void Process::close()
 	{
-		if (pHandle != nullptr) CloseHandle(pHandle);
-		if (tHandle != nullptr) CloseHandle(tHandle);
-		pHandle = tHandle = nullptr;
-		initEntry(pe);
-		initEntry(te);
+		if (pi.hProcess != nullptr) CloseHandle(pi.hProcess);
+		if (pi.hThread != nullptr) CloseHandle(pi.hThread);
+		clearHandle();
+	}
+	void Process::clearHandle()
+	{
+		core::zeromem(&si, sizeof si);
+		core::zeromem(&pi, sizeof pi);
+		si.cb = sizeof STARTUPINFO;
+		pi.dwProcessId = pi.dwThreadId = -1;
 	}
 }

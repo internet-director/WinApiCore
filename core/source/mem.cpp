@@ -31,6 +31,11 @@ namespace core {
 		return 0;
 	}
 
+	MEM_EXPORT void* zeromem(void* dst, size_t sz)
+	{
+		return memset(dst, 0, sz);
+	}
+
 	void* alloc(size_t sz)
 	{
 		return HeapAlloc(proc_heap, NULL, sz);
