@@ -71,26 +71,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)bin\</OutDir>
-    <IntDir>$(SolutionDir)bin\shit\$(ProjectName)</IntDir>
+    <OutDir>$(SolutionDir)bin_x86\</OutDir>
+    <IntDir>$(SolutionDir)bin_x86\shit\$(ProjectName)</IntDir>
     <IncludePath>$(SolutionDir)\core;$(SolutionDir)\core\source;$(SolutionDir)\core\include\core;$(SolutionDir)\core\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)bin\</OutDir>
-    <IntDir>$(SolutionDir)bin\shit\$(ProjectName)</IntDir>
+    <OutDir>$(SolutionDir)bin_x86\</OutDir>
+    <IntDir>$(SolutionDir)bin_x86\shit\$(ProjectName)</IntDir>
     <IncludePath>$(SolutionDir)\core;$(SolutionDir)\core\source;$(SolutionDir)\core\include\core;$(SolutionDir)\core\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\</OutDir>
-    <IntDir>$(SolutionDir)bin\shit\$(ProjectName)</IntDir>
+    <OutDir>$(SolutionDir)bin_x64\</OutDir>
+    <IntDir>$(SolutionDir)bin_x64\shit\$(ProjectName)</IntDir>
     <IncludePath>$(SolutionDir)\core;$(SolutionDir)\core\source;$(SolutionDir)\core\include\core;$(SolutionDir)\core\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\</OutDir>
-    <IntDir>$(SolutionDir)bin\shit\$(ProjectName)</IntDir>
+    <OutDir>$(SolutionDir)bin_x64\</OutDir>
+    <IntDir>$(SolutionDir)bin_x64\shit\$(ProjectName)</IntDir>
     <IncludePath>$(SolutionDir)\core;$(SolutionDir)\core\source;$(SolutionDir)\core\include\core;$(SolutionDir)\core\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>

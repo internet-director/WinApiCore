@@ -17,13 +17,10 @@ int entry()
 	if (argc < 2) return false;
 
 	bool res = false;
-	core::Process proc(argv[1]);
-	if (proc.open()) {
-		res = proc.suspend();
-		Sleep(5000);
-		res = proc.resume();
-		Sleep(5000);
+	core::Process proc(core::ProcessMonitor::getPid(argv[1]), PROCESS_TERMINATE);
+	if (proc.isOpen()) {
 		proc.kill();
+		res = true;
 	}
 	if(res) {
 		debug(L"done");

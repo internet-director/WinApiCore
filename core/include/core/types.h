@@ -72,7 +72,7 @@ namespace core {
 	template <typename T>
 	struct decay {
 		template <typename U> static U impl(U);
-		using type = decltype(impl(std::declval<T>()));
+		using type = decltype(impl(declval<T>()));
 	};
 
 	template<typename T>
