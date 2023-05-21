@@ -18,9 +18,8 @@ int entry()
 
 	bool res = false;
 	core::Process proc(core::ProcessMonitor::getPid(argv[1]), PROCESS_TERMINATE);
-	if (proc.isOpen()) {
+	if (res = proc.isOpen()) {
 		proc.kill();
-		res = true;
 	}
 	if(res) {
 		debug(L"done");

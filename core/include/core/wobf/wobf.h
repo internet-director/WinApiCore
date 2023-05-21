@@ -44,8 +44,10 @@ constexpr unsigned int hashNTDLL = wobf::constexprApiHash("ntdll.dll");
 constexpr unsigned int hashLoadLibraryA = wobf::constexprApiHash("LoadLibraryA");
 constexpr unsigned int hashGetProcAddress = wobf::constexprApiHash("GetProcAddress");
 
+#define API_ALWAYS(dll, func) (static_cast<core::decay_t<decltype(func)>>(wobf::GetFuncAddrByHash(dll, wobf::constexprApiHash(# func))))
+
 #ifdef USE_WINDOWS_DYNAMIC_IMPORT
-#define API(dll, func) (static_cast<core::decay_t<decltype(func)>>(wobf::GetFuncAddrByHash(dll, wobf::constexprApiHash(# func))))
+#define API(dll, func) API_ALWAYS(dll, func)
 #else
 #define API(dll, func) func
 #endif

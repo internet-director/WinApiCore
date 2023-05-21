@@ -3,35 +3,31 @@
 
 
 #define RVATOVA(base, offset) ((SIZE_T)base + (SIZE_T)offset)
-const int functionsCount = 64;
+
 int api_counter = 0;
 bool inited = false;
 
-typedef LPVOID(WINAPI* typeGetProcAddress)(HMODULE lib, LPCSTR func);
-typedef HMODULE(WINAPI* typeLoadLibraryA)(LPCSTR func);
+using typeGetProcAddress = core::decay_t<decltype(GetProcAddress)>;
+using typeLoadLibraryA = core::decay_t<decltype(LoadLibraryA)>;
 
 typeGetProcAddress _GetProcAddress;
 typeLoadLibraryA _LoadLibrary;
 
-struct func_addr {
-    LPVOID addr = 0;
-    DWORD hash = 0;
+struct AddressData {
+    const char* name = nullptr;
+    LPVOID      addr = nullptr;
+    uint32_t    hash = 0;
 };
 
-struct dll_addr {
-    LPVOID      addr = 0;
-    const char* name = 0;
-};
+AddressData apiArray[128];
 
-func_addr api_mass[functionsCount];
-
-dll_addr dll_mass[] = {
-    { NULL, ("kernel32.dll") },
-    { NULL, ("Advapi32.dll") },
-    { NULL, ("user32.dll") },
-    { NULL, ("ntdll.dll") },
-    { NULL, ("Shlwapi.dll") },
-    { NULL, ("Gdi32.dll") }
+AddressData dllArray[] = {
+    { ("kernel32.dll") },
+    { ("Advapi32.dll") },
+    { ("user32.dll") },
+    { ("ntdll.dll") },
+    { ("Shlwapi.dll") },
+    { ("Gdi32.dll") }
 };
 
 template<typename T>
@@ -92,11 +88,11 @@ HMODULE GetDllBase(UINT dllHash)
 HANDLE GetApiAddr2(HANDLE lib, size_t fHash)
 {
     for (int i = 0; i < api_counter; i++) {
-        if (api_mass[i].hash == fHash) {
-            return api_mass[i].addr;
+        if (apiArray[i].hash == fHash) {
+            return apiArray[i].addr;
         }
     }
-    api_mass[api_counter].hash = fHash;
+    apiArray[api_counter].hash = fHash;
 
     if (lib == nullptr) return nullptr;
 
@@ -115,8 +111,8 @@ HANDLE GetApiAddr2(HANDLE lib, size_t fHash)
         }
         name++;
     }
-    api_mass[api_counter].addr = _GetProcAddress((HMODULE)lib, n);
-    return api_mass[api_counter++].addr;
+    apiArray[api_counter].addr = _GetProcAddress((HMODULE)lib, n);
+    return apiArray[api_counter++].addr;
 }
 
 HANDLE GetApiAddr3(HANDLE lib, DWORD fHash)
@@ -173,7 +169,7 @@ LPVOID wobf::GetFuncAddrByHash(size_t lib, uint32_t hash)
         wobf::Init();
         inited = true;
     }
-    if (!dll_mass[lib].addr)
-        dll_mass[lib].addr = (_LoadLibrary)(dll_mass[lib].name);
-    return GetApiAddr2(dll_mass[lib].addr, hash);
+    if (!dllArray[lib].addr)
+        dllArray[lib].addr = (_LoadLibrary)(dllArray[lib].name);
+    return GetApiAddr2(dllArray[lib].addr, hash);
 }
