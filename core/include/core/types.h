@@ -28,18 +28,55 @@ namespace core {
 	template <class _Ty>
 	using remove_reference_t = typename remove_reference<_Ty>::type;
 
-	template <bool>
-	struct _Select { // Select between aliases that extract either their first or second parameter
-		template <class _Ty1, class>
-		using _Apply = _Ty1;
+
+	template <class>
+	// false value attached to a dependent name (for static_assert)
+	_INLINE_VAR constexpr bool _Always_false = false;
+
+	template <class... _Types>
+	using void_t = void;
+
+	template <class _Ty, class = void>
+	struct _Add_reference { // add reference (non-referenceable type)
+		using _Lvalue = _Ty;
+		using _Rvalue = _Ty;
 	};
 
-	template <>
-	struct _Select<false> {
-		template <class, class _Ty2>
-		using _Apply = _Ty2;
+	template <class _Ty>
+	struct _Add_reference<_Ty, void_t<_Ty&>> { // (referenceable type)
+		using _Lvalue = _Ty&;
+		using _Rvalue = _Ty&&;
 	};
 
+	template <class _Ty>
+	struct add_lvalue_reference {
+		using type = typename _Add_reference<_Ty>::_Lvalue;
+	};
+
+	template <class _Ty>
+	using add_lvalue_reference_t = typename _Add_reference<_Ty>::_Lvalue;
+
+	template <class _Ty>
+	struct add_rvalue_reference {
+		using type = typename _Add_reference<_Ty>::_Rvalue;
+	};
+
+	template <class _Ty>
+	using add_rvalue_reference_t = typename _Add_reference<_Ty>::_Rvalue;
+
+	template <class _Ty>
+	add_rvalue_reference_t<_Ty> declval() noexcept {
+		static_assert(_Always_false<_Ty>, "Calling declval is ill-formed, see N4892 [declval]/2.");
+	}
+
+	template <typename T>
+	struct decay {
+		template <typename U> static U impl(U);
+		using type = decltype(impl(std::declval<T>()));
+	};
+
+	template<typename T>
+	using decay_t = typename decay<T>::type;
 
 	template <class _Ty>
 	constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {

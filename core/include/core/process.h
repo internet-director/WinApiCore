@@ -38,8 +38,8 @@ namespace core {
 		ProcessMonitor(int pid);
 		ProcessMonitor(const WCHAR* processName);
 
-		int getPid();
-		int getTid();
+		int getPid() const noexcept { return pe.th32ProcessID; }
+		int getTid() const noexcept { return te.th32ThreadID; }
 		static int getPid(const WCHAR* processName);
 		static int getTid(const WCHAR* processName);
 		const WCHAR* getName() const;
@@ -74,10 +74,10 @@ namespace core {
 			}
 
 			if constexpr (core::is_same_v<T, THREADENTRY32>) {
-				hResult = Thread32First(hSnapshot, &pe);
+				hResult = API(KERNEL32, Thread32First)(hSnapshot, &pe);
 			}
 			else {
-				hResult = Process32FirstW(hSnapshot, &pe);
+				hResult = API(KERNEL32, Process32FirstW)(hSnapshot, &pe);
 			}
 
 			do
@@ -89,14 +89,14 @@ namespace core {
 				}
 
 				if constexpr (core::is_same_v<T, THREADENTRY32>) {
-					hResult = Thread32Next(hSnapshot, &pe);
+					hResult = API(KERNEL32, Thread32Next)(hSnapshot, &pe);
 				}
 				else {
-					hResult = Process32NextW(hSnapshot, &pe);
+					hResult = API(KERNEL32, Process32NextW)(hSnapshot, &pe);
 				}
 			} while (hResult);
 
-			CloseHandle(hSnapshot);
+			API(KERNEL32, CloseHandle)(hSnapshot);
 			if (hResult == FALSE)
 			{
 				initEntry(pe);

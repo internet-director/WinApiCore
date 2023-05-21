@@ -55,9 +55,12 @@ typedef core::uint64_t size_t;
 #define _INLINE_VAR inline
 #define __countof(X) sizeof(X) / sizeof(X[0])
 
-/*-----------------------------export dll settinds-----------------------------*/
+/*---------------------------------dll settind---------------------------------*/
+
+#define USE_WOBF
 
 #define MEM_EXPORT __declspec(dllexport)
 #define THREAD_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
 #define PROCESS_MONITOR_EXPORT __declspec(dllexport)
+#define WOBF_EXPORT __declspec(dllexport)

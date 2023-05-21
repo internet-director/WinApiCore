@@ -6,32 +6,29 @@ namespace core {
 	{
 		clear();
 	}
+
 	ProcessMonitor::ProcessMonitor(int pid): ProcessMonitor()
 	{
 		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_PID, pid);
 		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pid);
 	}
+
 	ProcessMonitor::ProcessMonitor(const WCHAR* processName): ProcessMonitor()
 	{
 		pe = getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName);
 		te = getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, pe.th32ProcessID);
 	}
-	int ProcessMonitor::getPid()
-	{
-		return pe.th32ProcessID;
-	}
-	int ProcessMonitor::getTid()
-	{
-		return te.th32ThreadID;
-	}
+
 	int ProcessMonitor::getPid(const WCHAR* processName)
 	{
 		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).th32ProcessID;
 	}
+
 	int ProcessMonitor::getTid(const WCHAR* processName)
 	{
-		return -1;
+		return getEntry<THREADENTRY32>(FINDT_BY_PARENT_PID, getPid(processName)).th32ThreadID;
 	}
+
 	const WCHAR* ProcessMonitor::getName() const
 	{
 		if (pe.th32ProcessID == -1) {
@@ -39,10 +36,12 @@ namespace core {
 		}
 		return pe.szExeFile;
 	}
+
 	const WCHAR* ProcessMonitor::getName(const WCHAR* processName)
 	{
 		return getEntry<PROCESSENTRY32W>(FINDP_BY_NAME, processName).szExeFile;
 	}
+
 	void ProcessMonitor::clear() noexcept
 	{
 		initPEntry(pe);
@@ -103,15 +102,15 @@ namespace core {
 
 		pi.dwProcessId = pId;
 		pi.dwThreadId = tId;
-		pi.hProcess = OpenProcess(pAccess, FALSE, pId);
-		pi.hThread = OpenThread(tAccess, FALSE, tId);
+		pi.hProcess = API(KERNEL32, OpenProcess)(pAccess, FALSE, pId);
+		pi.hThread = API(KERNEL32, OpenThread)(tAccess, FALSE, tId);
 
 		return isOpen();
 	}
 
 	bool Process::run(const WCHAR* exetutable, WCHAR* args, int creationFlag)
 	{
-		bool res = static_cast<bool>(CreateProcessW(exetutable, args, 0, 0, 0, creationFlag, 0, 0, &si, &pi));
+		bool res = static_cast<bool>(API(KERNEL32, CreateProcessW)(exetutable, args, 0, 0, 0, creationFlag, 0, 0, &si, &pi));
 		if (!res) {
 			clearHandle();
 		}
@@ -129,12 +128,12 @@ namespace core {
 
 	bool Process::suspend()
 	{
-		return isOpen() ? SuspendThread(pi.hThread) != -1 : false;
+		return isOpen() ? API(KERNEL32, SuspendThread)(pi.hThread) != -1 : false;
 	}
 
 	bool Process::resume()
 	{
-		return  isOpen() ? ResumeThread(pi.hThread) != -1 : false;
+		return  isOpen() ? API(KERNEL32, ResumeThread)(pi.hThread) != -1 : false;
 	}
 
 	bool Process::kill()
@@ -143,15 +142,15 @@ namespace core {
 			return false;
 		}
 
-		bool res = TerminateProcess(pi.hProcess, 1);
+		bool res = API(KERNEL32, TerminateProcess)(pi.hProcess, 1);
 		close();
 		return res;
 	}
 
 	void Process::close()
 	{
-		if (pi.hProcess != nullptr) CloseHandle(pi.hProcess);
-		if (pi.hThread != nullptr) CloseHandle(pi.hThread);
+		if (pi.hProcess != nullptr) API(KERNEL32, CloseHandle)(pi.hProcess);
+		if (pi.hThread != nullptr) API(KERNEL32, CloseHandle)(pi.hThread);
 		clearHandle();
 	}
 	void Process::clearHandle()
