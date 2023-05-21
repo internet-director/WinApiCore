@@ -1,1 +1,0 @@
-F:\source\git\console\bin_x64\shit\CoreTests\CoreTests.vcxproj.CopyComplete
