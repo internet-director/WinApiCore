@@ -139,7 +139,8 @@ namespace core {
 	public:
 		Process();
 		Process(int pid, int pAccess = -1, int tAccess = -1);
-		Process(const WCHAR* processName, int pAccess = -1, int tAccess = -1);
+		// ub - run new process or search existing?
+		//Process(const WCHAR* processName, int pAccess = -1, int tAccess = -1);
 		Process(Process&& other) noexcept;
 		Process& operator=(Process&& other) noexcept;
 		~Process();

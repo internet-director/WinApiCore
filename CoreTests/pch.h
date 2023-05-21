@@ -13,3 +13,4 @@
 
 bool runWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi);
 void killWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi);
+bool goodHash(const char* dll);

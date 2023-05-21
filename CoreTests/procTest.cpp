@@ -88,18 +88,6 @@ TEST(ProcessTest, WrongInitiallyByPid) {
 	EXPECT_NO_THROW(process.close());
 }
 
-TEST(ProcessTest, WrongInitiallyByName) {
-	core::Process process(L"");
-	EXPECT_EQ(process.getPid(), -1);
-	EXPECT_FALSE(process.isOpen());
-
-	EXPECT_FALSE(process.open(-1, -1));
-	EXPECT_FALSE(process.kill());
-	EXPECT_FALSE(process.suspend());
-	EXPECT_FALSE(process.resume());
-	EXPECT_NO_THROW(process.close());
-}
-
 TEST(ProcessTest, FindWaiterByPid) {
 	STARTUPINFO si{};
 	PROCESS_INFORMATION pi{};
@@ -143,7 +131,7 @@ TEST(ProcessTest, MoveConstructorTest1) {
 }
 
 TEST(ProcessTest, MoveConstructorTest2) {
-	core::Process process1(L"");
+	core::Process process1(-1);
 	core::Process process(core::move(process1));
 
 	EXPECT_EQ(process.getPid(), -1);
@@ -171,7 +159,7 @@ TEST(ProcessTest, MoveOperatorTest1) {
 }
 
 TEST(ProcessTest, MoveOperatorTest2) {
-	core::Process process1(L"");
+	core::Process process1(-1);
 	core::Process process = core::move(process1);
 
 	EXPECT_EQ(process.getPid(), -1);

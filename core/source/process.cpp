@@ -66,11 +66,6 @@ namespace core {
 		open(monitor.getPid(), monitor.getTid(), pAccess, tAccess);
 	}
 
-	Process::Process(const WCHAR* processName, int pAccess, int tAccess) : Process()
-	{
-		
-	}
-
 	Process::Process(Process&& other) noexcept : Process()
 	{
 		swap(*this, other);
