@@ -8,19 +8,19 @@ namespace core {
 	void memInit() {
 		proc_heap = API(KERNEL32, GetProcessHeap)();
 	}
-	void* memcpy(void* dst, const void* src, size_t sz) {
+	constexpr void* memcpy(void* dst, const void* src, size_t sz) {
 		for (volatile size_t i = 0; i < sz; i++) {
 			((uint8_t*)dst)[i] = ((uint8_t*)src)[i];
 		}
 		return dst;
 	}
-	void* memset(void* dst, int byte, size_t sz) {
+	constexpr void* memset(void* dst, int byte, size_t sz) {
 		for (volatile size_t i = 0; i < sz; i++) {
 			((uint8_t*)dst)[i] = byte;
 		}
 		return dst;
 	}
-	int memcmp(const void* dst, const void* src, size_t sz)
+	constexpr int memcmp(const void* dst, const void* src, size_t sz)
 	{
 		uint8_t* bdst = (uint8_t*)dst;
 		uint8_t* bsrc = (uint8_t*)src;
@@ -31,7 +31,7 @@ namespace core {
 		return 0;
 	}
 
-	MEM_EXPORT void* zeromem(void* dst, size_t sz)
+	constexpr void* zeromem(void* dst, size_t sz)
 	{
 		return memset(dst, 0, sz);
 	}

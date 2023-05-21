@@ -44,7 +44,7 @@ bool goodHash(const char* dll) {
 	char* n = nullptr;
 	for (int i = 0; i < data->NumberOfNames; i++) {
 		n = (char*)RVATOVA(lib, *name);
-		core::uint32_t hash = wobf::constexprApiHash(n);
+		core::uint32_t hash = core::hash32::calculate(n);
 		if (hashs.count(hash) != 0) return false;
 		hashs.insert(hash);
 		name++;

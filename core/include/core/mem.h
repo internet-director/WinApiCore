@@ -4,10 +4,10 @@
 namespace core
 {
 	MEM_EXPORT void memInit();
-	MEM_EXPORT void* memcpy(void* dst, const void* src, size_t sz);
-	MEM_EXPORT void* memset(void* dst, int byte, size_t sz);
-	MEM_EXPORT int memcmp(const void* dst, const void* src, size_t sz);
-	MEM_EXPORT void* zeromem(void* dst, size_t sz);
+	MEM_EXPORT constexpr void* memcpy(void* dst, const void* src, size_t sz);
+	MEM_EXPORT constexpr void* memset(void* dst, int byte, size_t sz);
+	MEM_EXPORT constexpr int memcmp(const void* dst, const void* src, size_t sz);
+	MEM_EXPORT constexpr void* zeromem(void* dst, size_t sz);
 
 	MEM_EXPORT void* alloc(size_t sz);
 	template<typename T>
@@ -15,4 +15,12 @@ namespace core
 		return static_cast<T*>(alloc(sz * sizeof(T)));
 	}
 	MEM_EXPORT int free(void* heap);
+
+	template<typename T>
+	MEM_EXPORT constexpr size_t strlen(const T* str)
+	{
+		size_t sz = -1;
+		while (str[++sz]);
+		return sz;
+	}
 }
