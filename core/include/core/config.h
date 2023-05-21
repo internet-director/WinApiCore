@@ -1,7 +1,12 @@
-#ifndef _CONFIG_HDR
-#define _CONFIG_HDR
+#pragma once
 #include <Windows.h>
+#include <winnt.h>
+#include <winternl.h>
 #include <tlhelp32.h>
+#include <LMaccess.h>
+#include <LMalert.h>
+#include <lmcons.h>
+#include <LM.h>
 
 namespace core {
 	typedef signed char        int8_t;
@@ -47,6 +52,7 @@ typedef core::uint64_t size_t;
 /*-------------------------------custom macroses-------------------------------*/
 
 #define END L"\r\n"
+#define _INLINE_VAR inline
 #define __countof(X) sizeof(X) / sizeof(X[0])
 
 /*-----------------------------export dll settinds-----------------------------*/
@@ -55,46 +61,3 @@ typedef core::uint64_t size_t;
 #define THREAD_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
 #define PROCESS_MONITOR_EXPORT __declspec(dllexport)
-
-/*-------------------------------normal standart-------------------------------*/
-
-namespace core {
-	template <class, class>
-	constexpr bool is_same_v = false;
-	template <class _Ty>
-	constexpr bool is_same_v<_Ty, _Ty> = true;
-
-	template <class _Ty>
-		struct remove_reference {
-		using type = _Ty;
-		using _Const_thru_ref_type = const _Ty;
-	};
-
-	template <class _Ty>
-	struct remove_reference<_Ty&> {
-		using type = _Ty;
-		using _Const_thru_ref_type = const _Ty&;
-	};
-
-	template <class _Ty>
-	struct remove_reference<_Ty&&> {
-		using type = _Ty;
-		using _Const_thru_ref_type = const _Ty&&;
-	};
-
-	template <class _Ty>
-		using remove_reference_t = typename remove_reference<_Ty>::type;
-
-	template <class _Ty>
-	constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {
-		return static_cast<remove_reference_t<_Ty>&&>(_Arg);
-	}
-
-	template<typename T> void swap(T& t1, T& t2) noexcept  {
-		T temp = core::move(t1);
-		t1 = core::move(t2);
-		t2 = core::move(temp);
-	}
-}
-
-#endif

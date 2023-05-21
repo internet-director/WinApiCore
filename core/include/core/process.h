@@ -1,5 +1,7 @@
 #pragma once
 #include <core/config.h>
+#include <core/types.h>
+#include <core/wobf/wobf.h>
 #include <core/mem.h>
 
 namespace core {
@@ -64,7 +66,7 @@ namespace core {
 				code = TH32CS_SNAPTHREAD;
 			}
 
-			HANDLE hSnapshot = CreateToolhelp32Snapshot(code, 0);
+			HANDLE hSnapshot = API(KERNEL32, CreateToolhelp32Snapshot)(code, 0);
 
 			if (INVALID_HANDLE_VALUE == hSnapshot)
 			{

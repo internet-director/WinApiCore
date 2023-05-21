@@ -24,6 +24,46 @@ TEST(ProcessMonitorTest, WrongInitiallyByName) {
 	EXPECT_EQ(process.getName(), nullptr);
 }
 
+TEST(ProcessMonitorTest, FindWaiterByName) {
+	STARTUPINFO si{};
+	PROCESS_INFORMATION pi{};
+	EXPECT_TRUE(runWaiter(si, pi)) << "Unable to start the waiter.exe, maybe you should check the path to it";
+
+	core::ProcessMonitor process(L"waiter.exe");
+
+	EXPECT_EQ(process.getPid(), pi.dwProcessId);
+	EXPECT_EQ(process.getTid(), pi.dwThreadId);
+	EXPECT_TRUE(process.isExist());
+
+	process.clear();
+
+	EXPECT_EQ(process.getPid(), -1);
+	EXPECT_EQ(process.getTid(), -1);
+	EXPECT_FALSE(process.isExist());
+
+	killWaiter(si, pi);
+}
+
+TEST(ProcessMonitorTest, FindWaiterByPid) {
+	STARTUPINFO si{};
+	PROCESS_INFORMATION pi{};
+	EXPECT_TRUE(runWaiter(si, pi)) << "Unable to start the waiter.exe, maybe you should check the path to it";
+
+	core::ProcessMonitor process(pi.dwProcessId);
+
+	EXPECT_EQ(process.getPid(), pi.dwProcessId);
+	EXPECT_EQ(process.getTid(), pi.dwThreadId);
+	EXPECT_TRUE(process.isExist());
+
+	process.clear();
+
+	EXPECT_EQ(process.getPid(), -1);
+	EXPECT_EQ(process.getTid(), -1);
+	EXPECT_FALSE(process.isExist());
+
+	killWaiter(si, pi);
+}
+
 TEST(ProcessTest, EmptyInitially) {
 	core::Process process;
 	EXPECT_EQ(process.getPid(), -1);

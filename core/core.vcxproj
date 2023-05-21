@@ -187,9 +187,11 @@
     <ClInclude Include="include\core\debug.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="include\core\mem.h" />
+    <ClInclude Include="include\core\types.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="include\core\process.h" />
     <ClInclude Include="include\core\thread.h" />
+    <ClInclude Include="include\core\wobf\wobf.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\debug.cpp" />
@@ -203,6 +205,7 @@
     </ClCompile>
     <ClCompile Include="source\process.cpp" />
     <ClCompile Include="source\thread.cpp" />
+    <ClCompile Include="source\wobf.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
