@@ -6,7 +6,6 @@ BOOL APIENTRY entryDll( HMODULE hModule,
                        LPVOID lpReserved
                      )
 {
-    wobf::Init();
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:

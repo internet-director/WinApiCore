@@ -9,6 +9,7 @@
 #include <core/config.h>
 #include <core/mem.h>
 #include <core/process.h>
+#include <core/wobf/wobf.h>
 
 bool runWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi);
 void killWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi);

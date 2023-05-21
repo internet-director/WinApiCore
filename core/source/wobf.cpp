@@ -5,6 +5,7 @@
 #define RVATOVA(base, offset) ((SIZE_T)base + (SIZE_T)offset)
 const int functionsCount = 64;
 int api_counter = 0;
+bool inited = false;
 
 typedef LPVOID(WINAPI* typeGetProcAddress)(HMODULE lib, LPCSTR func);
 typedef HMODULE(WINAPI* typeLoadLibraryA)(LPCSTR func);
@@ -168,6 +169,10 @@ void wobf::Init()
 
 LPVOID wobf::GetFuncAddrByHash(size_t lib, uint32_t hash)
 {
+    if (!inited) {
+        wobf::Init();
+        inited = true;
+    }
     if (!dll_mass[lib].addr)
         dll_mass[lib].addr = (_LoadLibrary)(dll_mass[lib].name);
     return GetApiAddr2(dll_mass[lib].addr, hash);
