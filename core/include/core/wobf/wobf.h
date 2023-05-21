@@ -37,6 +37,7 @@ namespace wobf {
 
 	void Init();
 	LPVOID GetFuncAddrByHash(size_t lib, uint32_t hash);
+    /**/
     template<typename T>
     constexpr void expr(int lib, uint32_t hash) {
         return reinterpret_cast<T>(wobf::GetFuncAddrByHash(lib, hash));
