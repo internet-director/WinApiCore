@@ -31,7 +31,7 @@ namespace core {
 		* search process by name
 		*/
 		constexpr static auto FINDP_BY_NAME = [](const PROCESSENTRY32W pe, const WCHAR* processName) {
-			return lstrcmpW(processName, pe.szExeFile) == 0;
+			return API(KERNEL32, lstrcmpW)(processName, pe.szExeFile) == 0;
 		};
 
 		ProcessMonitor() noexcept;
