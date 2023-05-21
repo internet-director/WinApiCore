@@ -2,15 +2,15 @@
 #include <core/wobf/wobf.h>
 
 #define RVATOVA(base, offset) ((SIZE_T)base + (SIZE_T)offset)
-
-#define API_SIZE 128
 size_t api_counter = 0;
 bool inited = false;
 
 constexpr const uint32_t hashLoadLibraryA = core::hash32::calculate("LoadLibraryA");
 constexpr const uint32_t hashGetProcAddress = core::hash32::calculate("GetProcAddress");
 
+using typeGetProcAddress = core::decay_t<decltype(GetProcAddress)>;
 using typeLoadLibraryA = core::decay_t<decltype(LoadLibraryA)>;
+typeGetProcAddress _GetProcAddress;
 typeLoadLibraryA _LoadLibrary;
 
 struct AddressData {
@@ -24,15 +24,29 @@ struct AddressData {
     }
 };
 
-AddressData apiArray[API_SIZE];
+AddressData apiArray[128];
 
 AddressData dllArray[] = {
-    { ("kernel32.dll") },
-    { ("Advapi32.dll") },
-    { ("user32.dll") },
-    { ("ntdll.dll") },
-    { ("Shlwapi.dll") },
-    { ("Gdi32.dll") }
+    { ("kernel32.dll") },   //KERNEL32 = 0
+    { ("advapi32.dll") },   //ADVAPI32 = 1
+    { ("user32.dll") },     //USER32 = 2
+    { ("ntdll.dll") },      //NTDLL = 3
+    { ("shlwapi.dll") },    //SHLWAPI = 4
+    { ("gdi32.dll") },      //GDI32 = 5
+    { ("iphlpapi.dll") },   //IPHLPAPI = 6
+    { ("urlmon.dll") },     //URLMON = 7
+    { ("ws2_32.dll") },     //WS2_32 = 8
+    { ("crypt32.dll") },    //CRYPT32 = 9
+    { ("shell32.dll") },    //SHELL32 = 10
+    { ("gdiplus.dll") },    //GDIPLUS = 11
+    { ("ole32.dll") },      //OLE32 = 12
+    { ("psapi.dll") },      //PSAPI = 13
+    { ("cabinet.dll") },    //CABINET = 14;
+    { ("imagehlp.dll") },   //IMAGEHLP = 15
+    { ("netapi32.dll") },   //NETAPI32 = 16
+    { ("Wtsapi32.dll") },   //WTSAPI32 = 17
+    { ("Mpr.dll") },        //MPR = 18
+    { ("WinHTTP.dll") }     //WINHTTP = 19
 };
 
 void Wide2Char(const WCHAR* data, char* out, UINT len)
@@ -77,13 +91,12 @@ HMODULE GetDllBase(UINT dllHash)
 
     } while (module_ptr && module_ptr != first_mod);
 
-    return NULL;
+    return nullptr;
 }
 
-
-HANDLE GetApiAddr2(HANDLE lib, size_t fHash)
+HANDLE GetApiAddr(HANDLE lib, size_t fHash)
 {
-    if (api_counter == API_SIZE) return nullptr;
+    if (api_counter == __countof(apiArray)) return nullptr;
 
     for (size_t i = 0; i < api_counter; i++) {
         if (apiArray[i].hash == fHash) {
@@ -109,32 +122,35 @@ HANDLE GetApiAddr2(HANDLE lib, size_t fHash)
         if (fHash == core::hash32::calculate(n)) {
             DWORD functionRVA = functions[ordAddress[i]];
             HANDLE functionAddr = (HANDLE)RVATOVA(lib, functionRVA);
-            {
-                // TODO
-            }
             api_counter++;
-            apiArray[api_counter - 1].addr = functionAddr;
+            if(!inited) {
+                apiArray[api_counter - 1].addr = functionAddr;
+            }
+            else {
+                apiArray[api_counter - 1].addr = _GetProcAddress(HMODULE(lib), n);
+            }
             return apiArray[api_counter - 1].addr;
         }
     }
     return nullptr;
 }
 
-void wobf::Init()
+void Init()
 {
     dllArray[NTDLL].addr = GetDllBase(dllArray[NTDLL].hash);
     dllArray[KERNEL32].addr = GetDllBase(dllArray[KERNEL32].hash);
    
-    _LoadLibrary = (typeLoadLibraryA)(GetApiAddr2(dllArray[KERNEL32].addr, hashLoadLibraryA));
+    _LoadLibrary = (typeLoadLibraryA)(GetApiAddr(dllArray[KERNEL32].addr, hashLoadLibraryA));
+    _GetProcAddress = (typeGetProcAddress)(GetApiAddr(dllArray[KERNEL32].addr, hashGetProcAddress));
 }
 
-LPVOID wobf::GetFuncAddrByHash(size_t lib, uint32_t hash)
+LPVOID core::wobf::GetFuncAddrByHash(size_t lib, uint32_t hash)
 {
     if (!inited) {
-        wobf::Init();
+        Init();
         inited = true;
     }
     if (dllArray[lib].addr == nullptr)
         dllArray[lib].addr = (_LoadLibrary)(dllArray[lib].name);
-    return GetApiAddr2(dllArray[lib].addr, hash);
+    return GetApiAddr(dllArray[lib].addr, hash);
 }

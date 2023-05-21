@@ -1,6 +1,5 @@
 #include <Windows.h>
-#include <core/debug.h>
-#include <core/mem.h>
+#include <core/core.h>
 
 LPCWSTR black_list[] = { L".", L".." };
 

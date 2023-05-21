@@ -5,6 +5,22 @@
 #include <core/mem.h>
 
 namespace core {
+	typedef struct BASE_RELOCATION_BLOCK {
+		DWORD PageAddress;
+		DWORD BlockSize;
+	} BASE_RELOCATION_BLOCK, * PBASE_RELOCATION_BLOCK;
+
+	typedef struct BASE_RELOCATION_ENTRY {
+		USHORT Offset : 12;
+		USHORT Type : 4;
+	} BASE_RELOCATION_ENTRY, * PBASE_RELOCATION_ENTRY;
+
+#define CountRelocationEntries(dwBlockSize)		\
+	(dwBlockSize -								\
+	sizeof(BASE_RELOCATION_BLOCK)) /			\
+	sizeof(BASE_RELOCATION_ENTRY)
+
+
 	class PROCESS_MONITOR_EXPORT ProcessMonitor {
 		THREADENTRY32 te;
 		PROCESSENTRY32W pe;
@@ -104,7 +120,6 @@ namespace core {
 			return pe;
 		}
 
-
 		/*
 		* fill THREADENTRY32 seroes, init dwSize, set pid as -1
 		*/
@@ -115,7 +130,7 @@ namespace core {
 		*/
 		static void initPEntry(PROCESSENTRY32W& pe) noexcept { initEntry(pe); }
 
-		void clear() noexcept;
+		void clearLocalVariable() noexcept;
 
 	private:
 		template<typename T>
@@ -133,6 +148,7 @@ namespace core {
 	};
 
 	class PROCESS_EXPORT Process {
+		bool _isSuspended;
 		STARTUPINFOW si;
 		PROCESS_INFORMATION pi;
 
@@ -158,6 +174,10 @@ namespace core {
 
 		bool isOpen() const noexcept { return pi.hProcess != nullptr && pi.hThread != nullptr; }
 
+		bool isSuspended() const noexcept {
+			return _isSuspended;
+		}
+
 		bool hollowing(const WCHAR* name);
 
 		/*
@@ -182,8 +202,23 @@ namespace core {
 		*/
 		void close();
 
+		constexpr static PIMAGE_NT_HEADERS GetNTHeaders(size_t dwImageBase)
+		{
+			return (PIMAGE_NT_HEADERS)(dwImageBase + ((PIMAGE_DOS_HEADER)dwImageBase)->e_lfanew);
+		}
+
+		constexpr bool static GetLoadedImage(size_t base, PLOADED_IMAGE pImage) {
+			PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)base;
+			PIMAGE_NT_HEADERS pNTHeaders = GetNTHeaders(base);
+
+			pImage->FileHeader = (PIMAGE_NT_HEADERS)(base + pDosHeader->e_lfanew);
+			pImage->NumberOfSections = pImage->FileHeader->FileHeader.NumberOfSections;
+			pImage->Sections = (PIMAGE_SECTION_HEADER)(base + pDosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS));
+			return false;
+		}
+
 	private:
-		void clearHandle();
+		void clearLocalVariable();
 
 		void swap(Process& a, Process& b) noexcept;
 	};

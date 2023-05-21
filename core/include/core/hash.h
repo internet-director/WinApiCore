@@ -33,7 +33,7 @@ namespace core {
 			constexpr T getHash(const void* dst, size_t sz) noexcept {
 				return _hash = calculate<uint8_t>(dst, sz);
 			}
-			constexpr void clear() noexcept { _hash = 0; }
+			constexpr void clearLocalVariable() noexcept { _hash = 0; }
 
 			template<typename C>
 			constexpr static T calculate(const C* dst)

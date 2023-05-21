@@ -1,5 +1,5 @@
 #pragma once
-#include "framework.h"
+#include <core/config.h>
 
 namespace core {
 	class THREAD_EXPORT Thread {

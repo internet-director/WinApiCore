@@ -1,7 +1,5 @@
 #include <Windows.h>
-#include <core/mem.h>
-#include <core/debug.h>
-#include <core/process.h>
+#include <core/core.h>
 
 #ifdef _DEBUG 
 int main()
@@ -11,6 +9,19 @@ int entry()
 {
 	core::memInit();
 
+	core::Process proc;
+	if (proc.run(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\waiter.exe", NULL, CREATE_SUSPENDED)) {
+		bool res = proc.hollowing(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\messager.exe");
+		if (res) {
+			debug(L"”–¿¿¿¿¿¿!!!");
+		}
+		else {
+			debug(L"SHIIIIIIT");
+		}
+	}
+
+	return 0;
+	/*
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
@@ -29,5 +40,5 @@ int entry()
 		debug(L"error");
 	}
 
-	return 0;
+	return 0;*/
 }
