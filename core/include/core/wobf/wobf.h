@@ -1,7 +1,6 @@
 #pragma once
 
 #include <core/config.h>
-#include <type_traits>
 
 constexpr int KERNEL32 = 0;
 constexpr int ADVAPI32 = 1;

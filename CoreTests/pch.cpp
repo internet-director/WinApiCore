@@ -8,9 +8,9 @@
 
 
 bool runWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi) {
-	ZeroMemory(&si, sizeof(si));
+	core::zeromem(&si, sizeof(si));
+	core::zeromem(&pi, sizeof(pi));
 	si.cb = sizeof(si);
-	ZeroMemory(&pi, sizeof(pi));
 
 #ifdef X64
 	const WCHAR* procName = L"..\\bin_x64\\waiter.exe";
@@ -23,9 +23,8 @@ bool runWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi) {
 
 void killWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi) {
 	if (TerminateProcess(pi.hProcess, 1)) {
-		if (CloseHandle(pi.hProcess)) {
-			CloseHandle(pi.hThread);
-		}
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
 	}
 }
 
