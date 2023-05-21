@@ -1,4 +1,4 @@
-# Simple CLI on WinApi
+# WinApi core and some utils 
 
 ## Build mode
 
