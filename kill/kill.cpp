@@ -10,7 +10,7 @@ int entry()
 	core::memInit();
 
 	core::Process proc;
-	WCHAR arg[] = L"c:\\windows\\syswow64\\notepad.exe";
+	WCHAR arg[] = L"notepad";
 	if (proc.run(NULL, arg, CREATE_SUSPENDED)) {
 		bool res = proc.hollowing(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\messager.exe");
 		if (res) {

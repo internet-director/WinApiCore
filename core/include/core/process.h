@@ -174,6 +174,8 @@ namespace core {
 
 		bool isOpen() const noexcept { return pi.hProcess != nullptr && pi.hThread != nullptr; }
 
+		bool is64() const;
+
 		bool isSuspended() const noexcept {
 			return _isSuspended;
 		}

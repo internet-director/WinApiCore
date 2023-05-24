@@ -234,6 +234,13 @@ namespace core {
 		return ret;
 	}
 
+	bool Process::is64() const {
+		if (!isOpen()) return false;
+		BOOL res;
+		API(KERNEL32, IsWow64Process)(pi.hProcess, &res);
+		return res;
+	}
+
 	bool Process::suspend()
 	{
 		return isOpen() ? API(KERNEL32, SuspendThread)(pi.hThread) != -1 : false;

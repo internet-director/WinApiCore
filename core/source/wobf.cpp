@@ -27,26 +27,26 @@ struct AddressData {
 AddressData apiArray[128];
 
 AddressData dllArray[] = {
-    { ("kernel32.dll") },   //KERNEL32 = 0
-    { ("advapi32.dll") },   //ADVAPI32 = 1
-    { ("user32.dll") },     //USER32 = 2
-    { ("ntdll.dll") },      //NTDLL = 3
-    { ("shlwapi.dll") },    //SHLWAPI = 4
-    { ("gdi32.dll") },      //GDI32 = 5
-    { ("iphlpapi.dll") },   //IPHLPAPI = 6
-    { ("urlmon.dll") },     //URLMON = 7
-    { ("ws2_32.dll") },     //WS2_32 = 8
-    { ("crypt32.dll") },    //CRYPT32 = 9
-    { ("shell32.dll") },    //SHELL32 = 10
-    { ("gdiplus.dll") },    //GDIPLUS = 11
-    { ("ole32.dll") },      //OLE32 = 12
-    { ("psapi.dll") },      //PSAPI = 13
-    { ("cabinet.dll") },    //CABINET = 14;
-    { ("imagehlp.dll") },   //IMAGEHLP = 15
-    { ("netapi32.dll") },   //NETAPI32 = 16
-    { ("Wtsapi32.dll") },   //WTSAPI32 = 17
-    { ("Mpr.dll") },        //MPR = 18
-    { ("WinHTTP.dll") }     //WINHTTP = 19
+    { ("kernel32.dll") },   // KERNEL32 = 0
+    { ("advapi32.dll") },   // ADVAPI32 = 1
+    { ("user32.dll") },     // USER32 =   2
+    { ("ntdll.dll") },      // NTDLL =    3
+    { ("shlwapi.dll") },    // SHLWAPI =  4
+    { ("gdi32.dll") },      // GDI32 =    5
+    { ("iphlpapi.dll") },   // IPHLPAPI = 6
+    { ("urlmon.dll") },     // URLMON =   7
+    { ("ws2_32.dll") },     // WS2_32 =   8
+    { ("crypt32.dll") },    // CRYPT32 =  9
+    { ("shell32.dll") },    // SHELL32 =  10
+    { ("gdiplus.dll") },    // GDIPLUS =  11
+    { ("ole32.dll") },      // OLE32 =    12
+    { ("psapi.dll") },      // PSAPI =    13
+    { ("cabinet.dll") },    // CABINET =  14;
+    { ("imagehlp.dll") },   // IMAGEHLP = 15
+    { ("netapi32.dll") },   // NETAPI32 = 16
+    { ("Wtsapi32.dll") },   // WTSAPI32 = 17
+    { ("Mpr.dll") },        // MPR =      18
+    { ("WinHTTP.dll") }     // WINHTTP =  19
 };
 
 void Wide2Char(const WCHAR* data, char* out, UINT len)
