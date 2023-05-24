@@ -7,6 +7,9 @@ namespace core {
 	template <class _Ty>
 	constexpr bool is_same_v<_Ty, _Ty> = true;
 
+	template <class T>
+	constexpr bool is_char_v = is_same_v<char, T> || is_same_v<wchar_t, T>;
+
 	template <class _Ty>
 	struct remove_reference {
 		using type = _Ty;

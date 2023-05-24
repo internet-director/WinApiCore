@@ -130,7 +130,7 @@ namespace core {
 		*/
 		static void initPEntry(PROCESSENTRY32W& pe) noexcept { initEntry(pe); }
 
-		void clearLocalVariable() noexcept;
+		void clear() noexcept;
 
 	private:
 		template<typename T>
@@ -196,6 +196,8 @@ namespace core {
 		* @return false if handle dont opened of failed, true if done
 		*/
 		bool kill();
+
+		bool wait(size_t tm = INFINITE);
 
 		/*
 		* close handle if opened

