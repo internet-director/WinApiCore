@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "mem.h"
 
-HANDLE proc_heap;
+HANDLE proc_heap = nullptr;
 
 namespace core {
 	
@@ -38,6 +38,9 @@ namespace core {
 
 	void* alloc(size_t sz)
 	{
+		if (proc_heap == nullptr) {
+			core::memInit();
+		}
 		return API(KERNEL32, HeapAlloc)(proc_heap, NULL, sz);
 	}
 

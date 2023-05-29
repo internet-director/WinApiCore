@@ -7,8 +7,6 @@ int main()
 int entry()
 #endif
 {
-	core::memInit();
-
 	core::Process proc;
 	WCHAR arg[] = L"notepad";
 	if (proc.run(NULL, arg, CREATE_SUSPENDED)) {
