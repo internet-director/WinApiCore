@@ -26,11 +26,11 @@ constexpr size_t WINHTTP = 19;
 
 namespace core {
     namespace wobf {
-        WOBF_EXPORT LPVOID GetFuncAddrByHash(size_t lib, uint32_t hash);
+        WOBF_EXPORT HANDLE GetFuncAddrByHash(size_t lib, uint32_t hash);
     }
 }
 
-#define API_ALWAYS(dll, func) (static_cast<core::decay_t<decltype(func)>>(core::wobf::GetFuncAddrByHash(dll, core::hash32::calculate(# func))))
+#define API_ALWAYS(dll, func) (static_cast<core::function_t<func>>(core::wobf::GetFuncAddrByHash(dll, core::hash32::calculate(# func))))
 
 #ifdef USE_WINDOWS_DYNAMIC_IMPORT
 #define API(dll, func) API_ALWAYS(dll, func)

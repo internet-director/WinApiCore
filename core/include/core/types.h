@@ -91,4 +91,7 @@ namespace core {
 		t1 = core::move(t2);
 		t2 = core::move(temp);
 	}
+
+	template<auto F>
+	using function_t = core::decay_t<decltype(F)>;
 }
