@@ -27,8 +27,8 @@ enum LibraryNumber {
 };
 
 namespace core {
-	// TODO: support multithreading
 	class WOBF_EXPORT Wobf {
+#define API_TYPES(X) core::hash32::calculate(# X), core::function_t<X>
 		struct AddressData {
 			const char* name = nullptr;
 			LPVOID      addr = nullptr;
@@ -42,6 +42,12 @@ namespace core {
 
 	public:
 		constexpr Wobf();
+		~Wobf() {
+			if (multiThInited) {
+				getAddr<KERNEL32, API_TYPES(ReleaseMutex)>()(mutex);
+				getAddr<KERNEL32, API_TYPES(CloseHandle)>()(mutex);
+			}
+		}
 		template<typename B, typename O>
 		static size_t rvatova(B base, O offset) noexcept {
 			return size_t(base) + size_t(offset);
@@ -50,19 +56,21 @@ namespace core {
 		bool init();
 
 		template<LibraryNumber lib, size_t hash, typename F>
-		F getAddr() {
-			if (!isInited && !init()) 
+		F getAddr(bool locked = true) {
+			if (!isInited && !init())
 				return nullptr;
-				
+
 			if (dllArray[lib].addr == nullptr)
 				dllArray[lib].addr = (_LoadLibrary)(dllArray[lib].name);
-			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash));
+			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 		}
 
 
 	private:
 		size_t apiCounter;
-		bool isInited;
+		bool isInited, multiThInited;
+		HANDLE mutex;
+		CRITICAL_SECTION _lock;
 
 		core::function_t<LoadLibraryA> _LoadLibrary;
 		core::function_t<GetProcAddress> _GetProcAddress;
@@ -91,15 +99,30 @@ namespace core {
 				{ ("WinHTTP.dll") }     // WINHTTP =  19
 		};
 
+		bool initMutlithreading() {
+			if (!isInited) return false;
+			if ((mutex = getAddr<KERNEL32, API_TYPES(CreateMutexW)>()(NULL, FALSE, L"wobf"))
+				== INVALID_HANDLE_VALUE) return false;
+
+			getAddr<KERNEL32, API_TYPES(InitializeCriticalSection)>()(&_lock);
+			getAddr<KERNEL32, API_TYPES(EnterCriticalSection)>(false);
+			getAddr<KERNEL32, API_TYPES(LeaveCriticalSection)>(false);
+			return multiThInited = true;
+		}
+		void lock() {
+			if (multiThInited) getAddr<KERNEL32, API_TYPES(EnterCriticalSection)>(false)(&_lock);
+		}
+		void release() {
+			if (multiThInited) getAddr<KERNEL32, API_TYPES(LeaveCriticalSection)>(false)(&_lock);
+		}
 		PPEB GetPEB();
 		HANDLE GetDllBase(size_t libHash);
-		HANDLE GetApiAddr(const HANDLE lib, size_t fHash);
+		HANDLE GetApiAddr(const HANDLE lib, size_t fHash, bool locked = true);
 	};
 }
 
 static core::Wobf wobf;
 
-//#define API_ALWAYS(dll, func) (static_cast<core::function_t<func>>(core::wobf::GetFuncAddrByHash(dll, core::hash32::calculate(# func))))
 #define API_ALWAYS(dll, func) (wobf.getAddr<dll, core::hash32::calculate(# func), core::function_t<func>>())
 
 #ifdef USE_WINDOWS_DYNAMIC_IMPORT

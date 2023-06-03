@@ -6,19 +6,24 @@ namespace core {
 		_LoadLibrary{ nullptr },
 		_GetProcAddress{ nullptr },
 		isInited{ false },
-		apiCounter{ 0 }
+		multiThInited{ false },
+		apiCounter{ 0 },
+		mutex{ INVALID_HANDLE_VALUE }
 	{
 	}
 	bool Wobf::init() {
-		if (isInited) return true;
-		dllArray[NTDLL].addr = GetDllBase(dllArray[NTDLL].hash);
-		dllArray[KERNEL32].addr = GetDllBase(dllArray[KERNEL32].hash);
+		if (!isInited) {
+			dllArray[NTDLL].addr = GetDllBase(dllArray[NTDLL].hash);
+			dllArray[KERNEL32].addr = GetDllBase(dllArray[KERNEL32].hash);
 
-		_LoadLibrary = static_cast<core::function_t<LoadLibraryA>>(GetApiAddr(dllArray[KERNEL32].addr,
-			core::hash32::calculate("LoadLibraryA")));
-		_GetProcAddress = static_cast<core::function_t<GetProcAddress>>(GetApiAddr(dllArray[KERNEL32].addr,
-			core::hash32::calculate("GetProcAddress")));
-		return isInited = _LoadLibrary != nullptr && _GetProcAddress != nullptr;
+			_LoadLibrary = static_cast<core::function_t<LoadLibraryA>>(GetApiAddr(dllArray[KERNEL32].addr,
+				core::hash32::calculate("LoadLibraryA")));
+			_GetProcAddress = static_cast<core::function_t<GetProcAddress>>(GetApiAddr(dllArray[KERNEL32].addr,
+				core::hash32::calculate("GetProcAddress")));
+			isInited = _LoadLibrary != nullptr && _GetProcAddress != nullptr;
+		}
+		if (!multiThInited) multiThInited = initMutlithreading();
+		return isInited && multiThInited;
 	}
 	PPEB Wobf::GetPEB()
 	{
@@ -48,8 +53,9 @@ namespace core {
 
 		return nullptr;
 	}
-	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash)
+	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
+		if(locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
 
 		for (size_t i = 0; i < apiCounter; i++) {
@@ -57,7 +63,7 @@ namespace core {
 				return static_cast<HANDLE>(apiArray[i].addr);
 			}
 		}
-
+		if (locked) release();
 		if (lib == nullptr) return nullptr;
 
 		PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)lib;
@@ -73,6 +79,7 @@ namespace core {
 		for (int i = 0; i < data->NumberOfNames; i++) {
 			n = (char*)rvatova(lib, name[i]);
 			if (fHash == core::hash32::calculate(n)) {
+				if (locked) lock();
 				DWORD functionRVA = functions[ordAddress[i]];
 				HANDLE functionAddr = (HANDLE)rvatova(lib, functionRVA);
 
@@ -83,7 +90,9 @@ namespace core {
 					apiArray[apiCounter].addr = _GetProcAddress(HMODULE(lib), n);
 				}
 				apiArray[apiCounter].hash = fHash;
-				return static_cast<HANDLE>(apiArray[apiCounter++].addr);
+				HANDLE result = static_cast<HANDLE>(apiArray[apiCounter++].addr);
+				if (locked) release();
+				return result;
 			}
 		}
 		return nullptr;
