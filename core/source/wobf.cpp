@@ -11,6 +11,12 @@ namespace core {
 		mutex{ INVALID_HANDLE_VALUE }
 	{
 	}
+	Wobf::~Wobf() {
+		if (multiThInited) {
+			getAddr<KERNEL32, API_FUNCTION_UNPACK(ReleaseMutex)>()(mutex);
+			getAddr<KERNEL32, API_FUNCTION_UNPACK(CloseHandle)>()(mutex);
+		}
+	}
 	bool Wobf::init() {
 		if (!isInited) {
 			dllArray[NTDLL].addr = GetDllBase(dllArray[NTDLL].hash);
@@ -24,6 +30,16 @@ namespace core {
 		}
 		if (!multiThInited) multiThInited = initMutlithreading();
 		return isInited && multiThInited;
+	}
+	bool Wobf::initMutlithreading() {
+		if (!isInited) return false;
+		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(CreateMutexW)>()(NULL, FALSE, L"wobf"))
+			== INVALID_HANDLE_VALUE) return false;
+
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(InitializeCriticalSection)>()(&_lock);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false);
+		return multiThInited = true;
 	}
 	PPEB Wobf::GetPEB()
 	{
@@ -60,7 +76,7 @@ namespace core {
 
 		for (size_t i = 0; i < apiCounter; i++) {
 			if (apiArray[i].hash == fHash) {
-				return static_cast<HANDLE>(apiArray[i].addr);
+				return apiArray[i].addr;
 			}
 		}
 		if (locked) release();
@@ -90,7 +106,7 @@ namespace core {
 					apiArray[apiCounter].addr = _GetProcAddress(HMODULE(lib), n);
 				}
 				apiArray[apiCounter].hash = fHash;
-				HANDLE result = static_cast<HANDLE>(apiArray[apiCounter++].addr);
+				HANDLE result = apiArray[apiCounter++].addr;
 				if (locked) release();
 				return result;
 			}

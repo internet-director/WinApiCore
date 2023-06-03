@@ -3,6 +3,8 @@
 #include <core/config.h>
 #include <core/hash.h>
 
+#define API_FUNCTION_UNPACK(X) core::hash32::calculate(# X), core::function_t<X>
+
 enum LibraryNumber {
 	KERNEL32,
 	ADVAPI32,
@@ -28,10 +30,9 @@ enum LibraryNumber {
 
 namespace core {
 	class WOBF_EXPORT Wobf {
-#define API_TYPES(X) core::hash32::calculate(# X), core::function_t<X>
 		struct AddressData {
 			const char* name = nullptr;
-			LPVOID      addr = nullptr;
+			HANDLE      addr = nullptr;
 			uint32_t    hash = 0;
 
 			constexpr AddressData() = default;
@@ -42,12 +43,7 @@ namespace core {
 
 	public:
 		constexpr Wobf();
-		~Wobf() {
-			if (multiThInited) {
-				getAddr<KERNEL32, API_TYPES(ReleaseMutex)>()(mutex);
-				getAddr<KERNEL32, API_TYPES(CloseHandle)>()(mutex);
-			}
-		}
+		~Wobf();
 		template<typename B, typename O>
 		static size_t rvatova(B base, O offset) noexcept {
 			return size_t(base) + size_t(offset);
@@ -99,31 +95,20 @@ namespace core {
 				{ ("WinHTTP.dll") }     // WINHTTP =  19
 		};
 
-		bool initMutlithreading() {
-			if (!isInited) return false;
-			if ((mutex = getAddr<KERNEL32, API_TYPES(CreateMutexW)>()(NULL, FALSE, L"wobf"))
-				== INVALID_HANDLE_VALUE) return false;
-
-			getAddr<KERNEL32, API_TYPES(InitializeCriticalSection)>()(&_lock);
-			getAddr<KERNEL32, API_TYPES(EnterCriticalSection)>(false);
-			getAddr<KERNEL32, API_TYPES(LeaveCriticalSection)>(false);
-			return multiThInited = true;
-		}
+		bool initMutlithreading();
 		void lock() {
-			if (multiThInited) getAddr<KERNEL32, API_TYPES(EnterCriticalSection)>(false)(&_lock);
+			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false)(&_lock);
 		}
 		void release() {
-			if (multiThInited) getAddr<KERNEL32, API_TYPES(LeaveCriticalSection)>(false)(&_lock);
+			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false)(&_lock);
 		}
 		PPEB GetPEB();
 		HANDLE GetDllBase(size_t libHash);
 		HANDLE GetApiAddr(const HANDLE lib, size_t fHash, bool locked = true);
-	};
+	} static _wobf;
 }
 
-static core::Wobf wobf;
-
-#define API_ALWAYS(dll, func) (wobf.getAddr<dll, core::hash32::calculate(# func), core::function_t<func>>())
+#define API_ALWAYS(dll, func) (core::_wobf.getAddr<dll, core::hash32::calculate(# func), core::function_t<func>>())
 
 #ifdef USE_WINDOWS_DYNAMIC_IMPORT
 #define API(dll, func) API_ALWAYS(dll, func)
