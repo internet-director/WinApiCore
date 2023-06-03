@@ -10,6 +10,7 @@ namespace core {
 		apiCounter{ 0 },
 		mutex{ INVALID_HANDLE_VALUE }
 	{
+		core::zeromem(&_lock, sizeof(_lock));
 	}
 	Wobf::~Wobf() {
 		if (multiThInited) {
@@ -41,7 +42,7 @@ namespace core {
 		getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false);
 		return multiThInited = true;
 	}
-	PPEB Wobf::GetPEB()
+	PPEB Wobf::GetPEB() const
 	{
 #ifdef _WIN64
 		return  (PPEB)__readgsqword(0x60);
@@ -49,7 +50,7 @@ namespace core {
 		return  (PPEB)__readfsdword(0x30);
 #endif
 	}
-	HANDLE Wobf::GetDllBase(size_t libHash) {
+	HANDLE Wobf::GetDllBase(size_t libHash) const {
 		PPEB peb = GetPEB();
 		PLDR_DATA_TABLE_ENTRY module_ptr, first_mod;
 

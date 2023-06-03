@@ -1,7 +1,7 @@
 #pragma once
-
-#include <core/config.h>
-#include <core/hash.h>
+#include "../config.h"
+#include "../mem.h"
+#include "../hash.h"
 
 #define API_FUNCTION_UNPACK(X) core::hash32::calculate(# X), core::function_t<X>
 
@@ -53,12 +53,13 @@ namespace core {
 
 		template<LibraryNumber lib, size_t hash, typename F>
 		F getAddr(bool locked = true) {
-			if (!isInited && !init())
+			/*if (!isInited && !init())
 				return nullptr;
 
 			if (dllArray[lib].addr == nullptr)
 				dllArray[lib].addr = (_LoadLibrary)(dllArray[lib].name);
-			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
+			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));*/
+			return 0;
 		}
 
 
@@ -97,13 +98,13 @@ namespace core {
 
 		bool initMutlithreading();
 		void lock() {
-			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false)(&_lock);
+			//if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false)(&_lock);
 		}
 		void release() {
-			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false)(&_lock);
+			//if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false)(&_lock);
 		}
-		PPEB GetPEB();
-		HANDLE GetDllBase(size_t libHash);
+		PPEB GetPEB() const;
+		HANDLE GetDllBase(size_t libHash) const;
 		HANDLE GetApiAddr(const HANDLE lib, size_t fHash, bool locked = true);
 	} static _wobf;
 }
