@@ -48,9 +48,6 @@
     <ClInclude Include="include\core\core.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\ntdll.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="include\core\ntdll_header.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
