@@ -1,7 +1,6 @@
 #pragma once
-#include <core/config.h>
-#include <core/types.h>
-#include <core/mem.h>
+#include "config.h"
+#include "mem.h"
 
 namespace core {
 	namespace hash_details {
@@ -22,7 +21,7 @@ namespace core {
 			constexpr T getHash(const C* dst)
 				noexcept(core::is_same_v<C, char> || core::is_same_v<C, wchar_t>)
 			{
-				return getHash(dst, core::strlen(dst));
+				return getHash(dst, core::strlen<C>(dst));
 			}
 			template<typename C>
 			constexpr T getHash(const C* dst, size_t sz)
@@ -38,7 +37,7 @@ namespace core {
 			template<typename C>
 			constexpr static T calculate(const C* dst)
 				noexcept(core::is_same_v<C, char> || core::is_same_v<C, wchar_t>) {
-				return calculate(dst, core::strlen(dst));
+				return calculate(dst, core::strlen<C>(dst));
 			}
 			template<typename C>
 			constexpr static T calculate(const C* dst, size_t sz) noexcept;

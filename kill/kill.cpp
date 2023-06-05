@@ -1,5 +1,6 @@
 #include <Windows.h>
-#include <core/core.h>
+#include <core/process.h>
+#include <core/debug.h>
 
 #ifdef _DEBUG 
 int main()
@@ -20,7 +21,7 @@ int entry()
 		proc.wait();
 	}
 
-	return 0;
+	API(KERNEL32, ExitProcess)(0);
 	/*
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);

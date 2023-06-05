@@ -1,5 +1,6 @@
 #pragma once
 #include "config.h"
+#include "wobf/wobf.h"
 
 namespace core
 {

@@ -9,5 +9,13 @@
 
 // Добавьте сюда заголовочные файлы для предварительной компиляции
 #include "framework.h"
+#include "include/core/types.h"
+#include "include/core/config.h"
+#include "include/core/mem.h"
+#include "include/core/hash.h"
+#include "include/core/wobf/wobf.h"
+#include "include/core/process.h"
+#include "include/core/thread.h"
+#include "include/core/debug.h"
 
 #endif //PCH_H
