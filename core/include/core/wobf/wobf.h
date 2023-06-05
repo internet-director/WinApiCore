@@ -54,9 +54,6 @@ constexpr const char* dllNames[] = {
 };
 
 namespace core {
-	namespace wobf {
-		WOBF_EXPORT HANDLE GetFuncAddrByHash(LibraryNumber lib, uint32_t hash);
-	}
 	class WOBF_EXPORT Wobf {
 		struct AddressData {
 			LPVOID      addr = nullptr;
@@ -92,7 +89,7 @@ namespace core {
 		HANDLE mutex;
 		CRITICAL_SECTION _lock;
 
-		AddressData dllArray[LibraryNumber::LibrarySize];
+		volatile AddressData apiArray[128], dllArray[LibraryNumber::LibrarySize];
 		core::function_t<LoadLibraryA> _LoadLibrary;
 		core::function_t<GetProcAddress> _GetProcAddress;
 
