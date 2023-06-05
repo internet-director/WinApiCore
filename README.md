@@ -6,7 +6,7 @@
 - Debug: default
 
 ## Core:
-- dynamic import from dll aka API(DLL, Function) in wobf
+- dynamic import from dll aka API(DLL, Function) in wobf, multithreading supported(optional)
 - memory basic utils
 - processMonitor(search existing process) and process(open existing process or create new process)
 
