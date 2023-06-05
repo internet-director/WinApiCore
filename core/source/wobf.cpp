@@ -2,7 +2,7 @@
 #include <core/wobf/wobf.h>
 
 namespace core {
-	constexpr Wobf::Wobf() :
+	Wobf::Wobf() :
 		_LoadLibrary{ nullptr },
 		_GetProcAddress{ nullptr },
 		isInited{ false },
@@ -12,6 +12,7 @@ namespace core {
 	{
 		core::zeromem(&_lock, sizeof _lock);
 	}
+
 	bool Wobf::init() {
 		if (!isInited) {
 			dllArray[NTDLL].addr = GetDllBase(core::hash32::calculate(dllNames[NTDLL]));
@@ -25,6 +26,14 @@ namespace core {
 		}
 		if (!multiThInited) multiThInited = initMutlithreading();
 		return isInited && multiThInited;
+	}
+	bool Wobf::close() {
+		bool res = true;
+		if (multiThInited) {
+			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(ReleaseMutex)>(false)(mutex)) == nullptr) res = false;
+			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(CloseHandle)>(false)(mutex)) == nullptr) res = false;
+		}
+		return res;
 	}
 	bool Wobf::initMutlithreading() {
 		if (!isInited) return false;
