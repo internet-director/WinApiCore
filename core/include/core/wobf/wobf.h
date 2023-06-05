@@ -25,54 +25,11 @@ enum LibraryNumber {
 	NETAPI32,
 	WTSAPI32,
 	MPR,
-	WINHTTP
+	WINHTTP,
+	LibrarySize
 };
 
-namespace core {
-	class WOBF_EXPORT Wobf {
-		struct AddressData {
-			const char* name = nullptr;
-			HANDLE      addr = nullptr;
-			uint32_t    hash = 0;
-
-			constexpr AddressData() = default;
-			constexpr AddressData(const char* name) :
-				name{ name },
-				hash{ core::hash32::calculate(name) } {}
-		};
-
-	public:
-		constexpr Wobf();
-		~Wobf();
-		template<typename B, typename O>
-		static size_t rvatova(B base, O offset) noexcept {
-			return size_t(base) + size_t(offset);
-		}
-
-		bool init();
-
-		template<LibraryNumber lib, size_t hash, typename F>
-		F getAddr(bool locked = true) {
-			if (!isInited && !init())
-				return nullptr;
-
-			if (dllArray[lib].addr == nullptr)
-				dllArray[lib].addr = (_LoadLibrary)(dllArray[lib].name);
-			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
-		}
-
-
-	private:
-		size_t apiCounter;
-		bool isInited, multiThInited;
-		HANDLE mutex;
-		CRITICAL_SECTION _lock;
-
-		core::function_t<LoadLibraryA> _LoadLibrary;
-		core::function_t<GetProcAddress> _GetProcAddress;
-
-		AddressData apiArray[128];
-		volatile AddressData dllArray[20] = {
+constexpr const char* dllNames[] = {
 				{ ("kernel32.dll") },   // KERNEL32 = 0
 				{ ("advapi32.dll") },   // ADVAPI32 = 1
 				{ ("user32.dll") },     // USER32 =   2
@@ -93,7 +50,62 @@ namespace core {
 				{ ("Wtsapi32.dll") },   // WTSAPI32 = 17
 				{ ("Mpr.dll") },        // MPR =      18
 				{ ("WinHTTP.dll") }     // WINHTTP =  19
+};
+
+namespace core {
+	class WOBF_EXPORT Wobf {
+		struct AddressData {
+			const char* name = nullptr;
+			HANDLE      addr = nullptr;
+			uint32_t    hash = 0;
+
+			constexpr AddressData() = default;
+			constexpr AddressData(const char* name) :
+				name{ name },
+				hash{ core::hash32::calculate(name) } {}
 		};
+
+	public:
+		constexpr Wobf();
+		/* 
+		* since the dll can be unloaded before the process terminates,
+		* the compiler uses aehit to call the destructor, so cleanup must be done manually
+		*/
+		// ~Wobf() { clear(); }
+		template<typename B, typename O>
+		static size_t rvatova(B base, O offset) noexcept {
+			return size_t(base) + size_t(offset);
+		}
+
+		bool init();
+		void clear() {
+			if (multiThInited) {
+				getAddr<KERNEL32, API_FUNCTION_UNPACK(ReleaseMutex)>()(mutex);
+				getAddr<KERNEL32, API_FUNCTION_UNPACK(CloseHandle)>()(mutex);
+			}
+		}
+		template<LibraryNumber lib, size_t hash, typename F>
+		F getAddr(bool locked = true) {
+			if (!isInited && !init())
+				return nullptr;
+
+			if (dllArray[lib].addr == nullptr)
+				dllArray[lib].addr = (_LoadLibrary)(dllNames[lib]);
+			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
+		}
+
+
+	private:
+		size_t apiCounter;
+		bool isInited, multiThInited;
+		HANDLE mutex;
+		CRITICAL_SECTION _lock;
+
+		core::function_t<LoadLibraryA> _LoadLibrary;
+		core::function_t<GetProcAddress> _GetProcAddress;
+
+		AddressData apiArray[128];
+		AddressData dllArray[LibraryNumber::LibrarySize];
 
 		bool initMutlithreading();
 		void lock() {

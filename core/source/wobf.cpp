@@ -10,17 +10,12 @@ namespace core {
 		apiCounter{ 0 },
 		mutex{ INVALID_HANDLE_VALUE }
 	{
-	}
-	Wobf::~Wobf() {
-		if (multiThInited) {
-			getAddr<KERNEL32, API_FUNCTION_UNPACK(ReleaseMutex)>()(mutex);
-			getAddr<KERNEL32, API_FUNCTION_UNPACK(CloseHandle)>()(mutex);
-		}
+		core::zeromem(&_lock, sizeof _lock);
 	}
 	bool Wobf::init() {
 		if (!isInited) {
-			dllArray[NTDLL].addr = GetDllBase(dllArray[NTDLL].hash);
-			dllArray[KERNEL32].addr = GetDllBase(dllArray[KERNEL32].hash);
+			dllArray[NTDLL].addr = GetDllBase(core::hash32::calculate(dllNames[NTDLL]));
+			dllArray[KERNEL32].addr = GetDllBase(core::hash32::calculate(dllNames[KERNEL32]));
 
 			_LoadLibrary = static_cast<core::function_t<LoadLibraryA>>(GetApiAddr(dllArray[KERNEL32].addr,
 				core::hash32::calculate("LoadLibraryA")));
@@ -71,7 +66,7 @@ namespace core {
 	}
 	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
-		if(locked) lock();
+		if (locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
 
 		for (size_t i = 0; i < apiCounter; i++) {
