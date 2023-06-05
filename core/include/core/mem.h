@@ -23,4 +23,6 @@ namespace core
 		while (str[++sz]);
 		return sz;
 	}
+
+	void Wide2Char(const WCHAR* data, char* out, UINT len);
 }

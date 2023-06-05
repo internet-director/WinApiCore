@@ -48,4 +48,16 @@ namespace core {
 	{
 		return API(KERNEL32, HeapFree)(proc_heap, NULL, heap);
 	}
+
+	void Wide2Char(const WCHAR* data, char* out, UINT len)
+	{
+		for (int i = 0; i < len; i++) {
+			if (!data[i]) {
+				out[i] = 0;
+				break;
+			}
+			// TODO
+			out[i] = data[i];
+		}
+	}
 }
