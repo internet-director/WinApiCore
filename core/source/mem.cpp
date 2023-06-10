@@ -14,7 +14,7 @@ namespace core {
 		}
 		return dst;
 	}
-	constexpr void* memset(void* dst, int byte, size_t sz) {
+	constexpr volatile void* memset(volatile void* dst, int byte, size_t sz) {
 		for (volatile size_t i = 0; i < sz; i++) {
 			((uint8_t*)dst)[i] = byte;
 		}
@@ -31,7 +31,7 @@ namespace core {
 		return 0;
 	}
 
-	constexpr void* zeromem(void* dst, size_t sz)
+	constexpr volatile void* zeromem(volatile void* dst, size_t sz)
 	{
 		return memset(dst, 0, sz);
 	}

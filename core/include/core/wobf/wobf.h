@@ -79,10 +79,13 @@ namespace core {
 			if (!isInited && !init())
 				return nullptr;
 
-			if (dllArray[lib].addr == nullptr)
-				dllArray[lib].addr = (_LoadLibrary)(dllNames[lib]);
+			GetOrLoadDll(lib);
 			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 		}
+		HANDLE GetOrLoadDll(size_t hash);
+		HANDLE GetOrLoadDll(LibraryNumber libNumber);
+		LibraryNumber FindLibraryNymberByHash(size_t hash) const;
+
 	private:
 		size_t apiCounter;
 		bool isInited, multiThInited;

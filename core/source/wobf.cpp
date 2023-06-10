@@ -11,6 +11,8 @@ namespace core {
 		mutex{ INVALID_HANDLE_VALUE }
 	{
 		core::zeromem(&_lock, sizeof _lock);
+		core::zeromem(apiArray, sizeof apiArray);
+		core::zeromem(dllArray, sizeof dllArray);
 	}
 
 	bool Wobf::init() {
@@ -40,7 +42,7 @@ namespace core {
 		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(CreateMutexW)>()(NULL, FALSE, L"wobf"))
 			== INVALID_HANDLE_VALUE) return false;
 
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(InitializeCriticalSection)>()(&_lock);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(InitializeCriticalSection)>(false)(&_lock);
 		getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false);
 		getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false);
 		return multiThInited = true;
@@ -72,6 +74,28 @@ namespace core {
 		} while (module_ptr != nullptr && module_ptr != first_mod);
 
 		return nullptr;
+	}
+	HANDLE Wobf::GetOrLoadDll(size_t hash)
+	{
+		LibraryNumber lib = FindLibraryNymberByHash(hash);
+		if (lib == LibrarySize) return nullptr;
+		return GetOrLoadDll(lib);
+	}
+	HANDLE Wobf::GetOrLoadDll(LibraryNumber libNumber)
+	{
+		if (dllArray[libNumber].addr != nullptr) return dllArray[libNumber].addr;
+		if (_LoadLibrary == nullptr) return nullptr;
+		dllArray[libNumber].addr = _LoadLibrary(dllNames[libNumber]);
+		dllArray[libNumber].hash = core::hash32::calculate(dllNames[libNumber]);
+		return dllArray[libNumber].addr;
+	}
+	LibraryNumber Wobf::FindLibraryNymberByHash(size_t hash) const
+	{
+		for (size_t i = 0; i < LibrarySize; i++) {
+			if (dllArray[i].hash == hash) return LibraryNumber(i);
+			if (core::hash32::calculate(dllNames[i]) == hash) return LibraryNumber(i);
+		}
+		return LibraryNumber::LibrarySize;
 	}
 	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
@@ -119,9 +143,11 @@ namespace core {
 					}
 
 					core::memcpy(dllName, forwardedFunctionName, dotIndex);
-					dllName[dotIndex] = 0;
+					core::memcpy(dllName + dotIndex, ".dll", 4);
+					dllName[dotIndex + 4] = 0;
 
-					HANDLE forwardedModule = _LoadLibrary(dllName);
+					HANDLE forwardedModule = GetOrLoadDll(core::hash32::calculate(dllName));
+					// TODO: fix recursion
 					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
 				}
 				if (functionAddr == nullptr) {

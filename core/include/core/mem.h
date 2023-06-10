@@ -5,9 +5,9 @@ namespace core
 {
 	MEM_EXPORT void memInit();
 	MEM_EXPORT constexpr void* memcpy(void* dst, const void* src, size_t sz);
-	MEM_EXPORT constexpr void* memset(void* dst, int byte, size_t sz);
+	MEM_EXPORT constexpr volatile void* memset(volatile void* dst, int byte, size_t sz);
 	MEM_EXPORT constexpr int memcmp(const void* dst, const void* src, size_t sz);
-	MEM_EXPORT constexpr void* zeromem(void* dst, size_t sz);
+	MEM_EXPORT constexpr volatile void* zeromem(volatile void* dst, size_t sz);
 
 	MEM_EXPORT void* alloc(size_t sz);
 	template<typename T>
