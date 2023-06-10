@@ -20,6 +20,8 @@ namespace core {
 	typedef unsigned short     uint16_t;
 	typedef unsigned int       uint32_t;
 	typedef unsigned long long uint64_t;
+
+	constexpr size_t npos = size_t(-1);
 }
 
 typedef core::int8_t	int8_t;
@@ -30,6 +32,8 @@ typedef core::uint8_t	uint8_t;
 typedef core::uint16_t	uint16_t;
 typedef core::uint32_t	uint32_t;
 typedef core::uint64_t	uint64_t;
+
+constexpr size_t npos = core::npos;
 
 #ifndef _WIN64
 typedef core::uint32_t size_t;

@@ -25,4 +25,12 @@ namespace core
 	}
 
 	void Wide2Char(const WCHAR* data, char* out, UINT len);
+
+	template<typename T>
+	size_t find(const T* array, const T& obj, size_t sz) {
+		for (size_t i = 0; i < sz; i++) {
+			if (array[i] == obj) return i;
+		}
+		return core::npos;
+	}
 }

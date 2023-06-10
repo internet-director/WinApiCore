@@ -80,6 +80,7 @@ namespace core {
 
 		for (size_t i = 0; i < apiCounter; i++) {
 			if (apiArray[i].hash == fHash) {
+				if (locked) release();
 				return apiArray[i].addr;
 			}
 		}
@@ -89,8 +90,8 @@ namespace core {
 		PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)lib;
 		PIMAGE_NT_HEADERS nt = (PIMAGE_NT_HEADERS)rvatova(lib, dos->e_lfanew);
 		IMAGE_FILE_HEADER f = nt->FileHeader;
-		IMAGE_OPTIONAL_HEADER opt = nt->OptionalHeader;
-		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)rvatova(lib, opt.DataDirectory[0].VirtualAddress);
+		PIMAGE_DATA_DIRECTORY exportData = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)rvatova(lib, exportData->VirtualAddress);
 		PDWORD name = (PDWORD)rvatova(lib, data->AddressOfNames);
 		PDWORD functions = (PDWORD)rvatova(lib, data->AddressOfFunctions);
 		PWORD ordAddress = (PWORD)rvatova(lib, data->AddressOfNameOrdinals);
@@ -100,19 +101,38 @@ namespace core {
 			n = (char*)rvatova(lib, name[i]);
 			if (fHash == core::hash32::calculate(n)) {
 				if (locked) lock();
-				DWORD functionRVA = functions[ordAddress[i]];
+				size_t functionRVA = functions[ordAddress[i]];
 				HANDLE functionAddr = (HANDLE)rvatova(lib, functionRVA);
 
-				if (!isInited) {
-					apiArray[apiCounter].addr = functionAddr;
+				// function forwarded
+				if (functionRVA > (size_t)exportData->VirtualAddress &&
+					functionRVA < (size_t)exportData->VirtualAddress + exportData->Size) {
+					char dllName[MAX_PATH];
+					LPCSTR forwardedFunctionName = reinterpret_cast<LPCSTR>(rvatova(lib, functionRVA));
+					size_t dotIndex = core::find(forwardedFunctionName, '.',
+						core::strlen(forwardedFunctionName));
+
+					// invalid forwaring
+					if (dotIndex == core::npos) {
+						if (locked) release();
+						return nullptr;
+					}
+
+					core::memcpy(dllName, forwardedFunctionName, dotIndex);
+					dllName[dotIndex] = 0;
+
+					HANDLE forwardedModule = _LoadLibrary(dllName);
+					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
 				}
-				else {
-					apiArray[apiCounter].addr = _GetProcAddress(HMODULE(lib), n);
+				if (functionAddr == nullptr) {
+					if (locked) release();
+					return nullptr;
 				}
-				apiArray[apiCounter].hash = fHash;
-				HANDLE result = apiArray[apiCounter++].addr;
+
+				apiArray[apiCounter].addr = functionAddr;
+				apiArray[apiCounter++].hash = fHash;
 				if (locked) release();
-				return result;
+				return functionAddr;
 			}
 		}
 		return nullptr;
