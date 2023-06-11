@@ -32,19 +32,30 @@ namespace core {
 	bool Wobf::close() {
 		bool res = true;
 		if (multiThInited) {
-			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(ReleaseMutex)>(false)(mutex)) == nullptr) res = false;
-			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(CloseHandle)>(false)(mutex)) == nullptr) res = false;
+			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, ReleaseMutex)>(false)(mutex)) == nullptr) res = false;
+			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CloseHandle)>(false)(mutex)) == nullptr) res = false;
+		}
+
+		if (isInited) {
+			for (size_t i = 0; i < LibrarySize; i++) {
+				if (i == KERNEL32 || i == NTDLL) continue;
+				if (dllArray[i].addr == nullptr) continue;
+				API(KERNEL32, FreeLibrary)(static_cast<HMODULE>(dllArray[i].addr));
+			}
 		}
 		return res;
 	}
 	bool Wobf::initMutlithreading() {
 		if (!isInited) return false;
-		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(CreateMutexW)>()(NULL, FALSE, L"wobf"))
-			== INVALID_HANDLE_VALUE) return false;
+		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CreateMutexW)>()(NULL, FALSE, L"wobf"))
+			== INVALID_HANDLE_VALUE) {
 
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(InitializeCriticalSection)>(false)(&_lock);
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false);
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false);
+			return false;
+		}
+
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, InitializeCriticalSection)>(false)(&_lock);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false);
 		return multiThInited = true;
 	}
 	PPEB Wobf::GetPEB()
@@ -99,6 +110,9 @@ namespace core {
 	}
 	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
+#ifdef KEEPS_WOBF_LOGS
+		debug("\t");
+#endif
 		if (locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
 

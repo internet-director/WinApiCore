@@ -66,6 +66,12 @@ typedef core::uint64_t size_t;
 
 #define USE_WINDOWS_DYNAMIC_IMPORT
 
+#define KEEPS_ALL_LOGS
+
+#if defined(USE_WINDOWS_DYNAMIC_IMPORT) and defined(_DEBUG)
+#define KEEPS_WOBF_LOGS
+#endif
+
 #ifndef DONT_EXPORT
 #define MEM_EXPORT __declspec(dllexport)
 #define THREAD_EXPORT __declspec(dllexport)

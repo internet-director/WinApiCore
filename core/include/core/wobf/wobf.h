@@ -2,8 +2,14 @@
 
 #include <core/config.h>
 #include <core/hash.h>
+#include <core/debug.h>
+#include <core/StringObf.h>
 
-#define API_FUNCTION_UNPACK(X) core::hash32::calculate(# X), core::function_t<X>
+#ifdef KEEPS_WOBF_LOGS
+#define API_FUNCTION_UNPACK(dll, X) core::hash32::calculate(# X), core::function_t<X>, conststr(# X), conststr(# dll)
+#else
+#define API_FUNCTION_UNPACK(dll, X) core::hash32::calculate(# X), core::function_t<X>
+#endif
 
 enum LibraryNumber {
 	KERNEL32,
@@ -30,7 +36,7 @@ enum LibraryNumber {
 };
 
 // TODO: brute value by hash in runtime
-constexpr const char* dllNames[] = {
+static const char* dllNames[LibraryNumber::LibrarySize] = {
 	{ ("kernel32.dll") },   // KERNEL32 = 0
 	{ ("advapi32.dll") },   // ADVAPI32 = 1
 	{ ("user32.dll") },     // USER32 =   2
@@ -74,17 +80,46 @@ namespace core {
 			return size_t(base) + size_t(offset);
 		}
 
+#ifdef KEEPS_WOBF_LOGS
+		template<LibraryNumber lib, size_t hash, typename F, conststr functionName, conststr dllName>
+#else
 		template<LibraryNumber lib, size_t hash, typename F>
+#endif
 		F getAddr(bool locked = true) {
-			if (!isInited && !init())
+			if (!isInited && !init()) {
+#ifdef KEEPS_WOBF_LOGS
+				debug(L"Cant init wobf!" END);
+#endif
 				return nullptr;
+			}
+
+#ifdef KEEPS_WOBF_LOGS
+			{
+				debug("call API(");
+				debug(dllName.p);
+				debug(",");
+				debug(functionName.p);
+				debug(L")" END);
+			}
+#endif
 
 			GetOrLoadDll(lib);
-			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
+			F result = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
+
+#ifdef KEEPS_WOBF_LOGS
+			{
+				debug(END);
+			}
+#endif
+			return result;
 		}
 		HANDLE GetOrLoadDll(size_t hash);
 		HANDLE GetOrLoadDll(LibraryNumber libNumber);
 		LibraryNumber FindLibraryNymberByHash(size_t hash) const;
+		static const char* GetLibraryName(LibraryNumber lib) {
+			if (lib == LibrarySize) return "";
+			return dllNames[lib];
+		}
 
 	private:
 		size_t apiCounter;
@@ -98,10 +133,10 @@ namespace core {
 
 		bool initMutlithreading();
 		void lock() {
-			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false)(&_lock);
+			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false)(&_lock);
 		}
 		void release() {
-			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false)(&_lock);
+			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false)(&_lock);
 		}
 		PPEB GetPEB();
 		HANDLE GetDllBase(size_t libHash);
@@ -109,8 +144,7 @@ namespace core {
 	} static _wobf;
 }
 
-//#define API_ALWAYS(dll, func) (static_cast<core::function_t<func>>(core::wobf::GetFuncAddrByHash(dll, core::hash32::calculate(# func))))
-#define API_ALWAYS(dll, func) (core::_wobf.getAddr<dll, API_FUNCTION_UNPACK(func)>())
+#define API_ALWAYS(dll, func) (core::_wobf.getAddr<dll, API_FUNCTION_UNPACK(dll, func)>())
 
 #ifdef USE_WINDOWS_DYNAMIC_IMPORT
 #define API(dll, func) API_ALWAYS(dll, func)

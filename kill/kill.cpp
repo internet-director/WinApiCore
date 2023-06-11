@@ -9,15 +9,17 @@ int entry()
 {
 	core::Process proc;
 	WCHAR arg[] = L"notepad";
-	if (proc.run(NULL, arg, CREATE_SUSPENDED)) {
-		bool res = proc.hollowing(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\messager.exe");
+	
+	if (proc.run(NULL, arg)) {
+		/*bool res = proc.hollowing(L"C:\\Users\\internet_director\\prog\\other\\console\\bin_x64\\messager.exe");
 		if (res) {
 			debug(L"”–¿¿¿¿¿¿!!!");
 		}
 		else {
 			debug(L"SHIIIIIIT");
-		}
-		proc.wait();
+		}*/
+		proc.wait(5000);
+		proc.kill();
 	}
 
 	return 0;
