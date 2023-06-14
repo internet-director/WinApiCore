@@ -26,8 +26,19 @@ namespace core {
 				core::hash32::calculate("GetProcAddress")));
 			isInited = _LoadLibrary != nullptr && _GetProcAddress != nullptr;
 		}
-		if (!multiThInited) multiThInited = initMutlithreading();
-		return isInited && multiThInited;
+		return isInited;
+	}
+	bool Wobf::initMutlithreading() {
+		if (!isInited) return false;
+		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CreateMutexW)>(false)(NULL, FALSE, L"wobf"))
+			== INVALID_HANDLE_VALUE) {
+			return false;
+		}
+
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, InitializeCriticalSection)>(false)(&_lock);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false);
+		return multiThInited = true;
 	}
 	bool Wobf::close() {
 		bool res = true;
@@ -44,19 +55,6 @@ namespace core {
 			}
 		}
 		return res;
-	}
-	bool Wobf::initMutlithreading() {
-		if (!isInited) return false;
-		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CreateMutexW)>()(NULL, FALSE, L"wobf"))
-			== INVALID_HANDLE_VALUE) {
-
-			return false;
-		}
-
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, InitializeCriticalSection)>(false)(&_lock);
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false);
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false);
-		return multiThInited = true;
 	}
 	PPEB Wobf::GetPEB()
 	{
@@ -110,9 +108,7 @@ namespace core {
 	}
 	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
-#ifdef KEEPS_WOBF_LOGS
 		debug("\t");
-#endif
 		if (locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
 

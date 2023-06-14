@@ -74,6 +74,7 @@ namespace core {
 		// the compiler automatically uses atexit(from crt), so you have to do without statics with destructors
 		//~Wobf() { close(); }
 		bool init();
+		bool initMutlithreading();
 		bool close();
 		template<typename B, typename O>
 		static size_t rvatova(B base, O offset) noexcept {
@@ -87,30 +88,24 @@ namespace core {
 #endif
 		F getAddr(bool locked = true) {
 			if (!isInited && !init()) {
-#ifdef KEEPS_WOBF_LOGS
 				debug(L"Cant init wobf!" END);
-#endif
 				return nullptr;
 			}
 
+			debug("call API(");
 #ifdef KEEPS_WOBF_LOGS
 			{
-				debug("call API(");
 				debug(dllName.p);
 				debug(",");
 				debug(functionName.p);
-				debug(L")" END);
+
 			}
 #endif
-
+			debug(L")" END);
 			GetOrLoadDll(lib);
 			F result = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 
-#ifdef KEEPS_WOBF_LOGS
-			{
-				debug(END);
-			}
-#endif
+			debug(END);
 			return result;
 		}
 		HANDLE GetOrLoadDll(size_t hash);
@@ -131,12 +126,11 @@ namespace core {
 		core::function_t<LoadLibraryA> _LoadLibrary;
 		core::function_t<GetProcAddress> _GetProcAddress;
 
-		bool initMutlithreading();
 		void lock() {
-			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false)(&_lock);
+			if (isInited && multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false)(&_lock);
 		}
 		void release() {
-			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false)(&_lock);
+			if (isInited && multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false)(&_lock);
 		}
 		PPEB GetPEB();
 		HANDLE GetDllBase(size_t libHash);

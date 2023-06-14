@@ -72,14 +72,18 @@ typedef core::uint64_t size_t;
 #define KEEPS_WOBF_LOGS
 #endif
 
-#ifndef DONT_EXPORT
+#ifdef CORE_EXPORTS
+#define CORE_EXPORT __declspec(dllexport)
 #define MEM_EXPORT __declspec(dllexport)
+#define STACK_EXPORT __declspec(dllexport)
 #define THREAD_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
 #define PROCESS_MONITOR_EXPORT __declspec(dllexport)
 #define WOBF_EXPORT __declspec(dllexport)
 #else
+#define CORE_EXPORT
 #define MEM_EXPORT
+#define STACK_EXPORT
 #define THREAD_EXPORT
 #define PROCESS_EXPORT
 #define PROCESS_MONITOR_EXPORT

@@ -1,5 +1,5 @@
 #pragma once
-#include <core/debug.h>
+#include <core/config.h>
 
 #ifndef _DEBUG
 struct debug {

@@ -8,7 +8,7 @@ namespace core {
 	void memInit() {
 		proc_heap = API(KERNEL32, GetProcessHeap)();
 	}
-	constexpr void* memcpy(void* dst, const void* src, size_t sz) {
+	constexpr volatile void* memcpy(volatile void* dst, const void* src, size_t sz) {
 		for (volatile size_t i = 0; i < sz; i++) {
 			((uint8_t*)dst)[i] = ((uint8_t*)src)[i];
 		}
