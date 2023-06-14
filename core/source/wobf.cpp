@@ -4,7 +4,6 @@
 namespace core {
 	Wobf::Wobf() :
 		_LoadLibrary{ nullptr },
-		_GetProcAddress{ nullptr },
 		isInited{ false },
 		multiThInited{ false },
 		apiCounter{ 0 },
@@ -22,9 +21,7 @@ namespace core {
 
 			_LoadLibrary = static_cast<core::function_t<LoadLibraryA>>(GetApiAddr(dllArray[KERNEL32].addr,
 				core::hash32::calculate("LoadLibraryA")));
-			_GetProcAddress = static_cast<core::function_t<GetProcAddress>>(GetApiAddr(dllArray[KERNEL32].addr,
-				core::hash32::calculate("GetProcAddress")));
-			isInited = _LoadLibrary != nullptr && _GetProcAddress != nullptr;
+			isInited = _LoadLibrary != nullptr;
 		}
 		return isInited;
 	}
