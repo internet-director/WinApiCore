@@ -1,5 +1,6 @@
 #pragma once
 #include "config.h"
+#include <core/NtApi.h>
 
 namespace core
 {

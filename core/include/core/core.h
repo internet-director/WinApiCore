@@ -9,3 +9,4 @@
 #include <core/mem.h>
 #include <core/process.h>
 #include <core/thread.h>
+#include <core/NtApi.h>

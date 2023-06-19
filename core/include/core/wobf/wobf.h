@@ -73,6 +73,7 @@ namespace core {
 		static size_t rvatova(B base, O offset) noexcept {
 			return size_t(base) + size_t(offset);
 		}
+		PPEB GetPEB();
 
 		template<LibraryNumber lib, size_t hash, typename F>
 		F getAddr(bool locked = true) {
@@ -81,6 +82,10 @@ namespace core {
 
 			if (dllArray[lib].addr == nullptr)
 				dllArray[lib].addr = (_LoadLibrary)(dllNames[lib]);
+
+			if (lib == NTDLL) {
+				// TODO: direct syscalls
+			}
 			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 		}
 	private:
@@ -100,7 +105,6 @@ namespace core {
 		void release() {
 			if (multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false)(&_lock);
 		}
-		PPEB GetPEB();
 		HANDLE GetDllBase(size_t libHash);
 		HANDLE GetApiAddr(const HANDLE lib, size_t fHash, bool locked = true);
 	} static _wobf;

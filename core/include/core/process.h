@@ -2,6 +2,7 @@
 #include <core/config.h>
 #include <core/types.h>
 #include <core/wobf/wobf.h>
+#include <core/NtApi.h>
 #include <core/mem.h>
 
 namespace core {
@@ -112,7 +113,7 @@ namespace core {
 				}
 			} while (hResult);
 
-			API(KERNEL32, CloseHandle)(hSnapshot);
+			core::CloseHandle(hSnapshot);
 			if (hResult == FALSE)
 			{
 				initEntry(pe);

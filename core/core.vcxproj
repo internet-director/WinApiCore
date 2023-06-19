@@ -191,6 +191,7 @@
     <ClInclude Include="include\core\mem.h" />
     <ClInclude Include="include\core\ntdll_header.h" />
     <ClInclude Include="include\core\types.h" />
+    <ClInclude Include="include\core\NtApi.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="include\core\process.h" />
     <ClInclude Include="include\core\thread.h" />
@@ -198,6 +199,7 @@
     <ClInclude Include="include\core\StringObf.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\NtApi.cpp" />
     <ClCompile Include="source\hash.cpp" />
     <ClCompile Include="source\debug.cpp" />
     <ClCompile Include="dllmain.cpp" />

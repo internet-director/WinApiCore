@@ -97,8 +97,8 @@ namespace core {
 
 		pi.dwProcessId = pId;
 		pi.dwThreadId = tId;
-		pi.hProcess = API(KERNEL32, OpenProcess)(pAccess, FALSE, pId);
-		pi.hThread = API(KERNEL32, OpenThread)(tAccess, FALSE, tId);
+		pi.hProcess = core::OpenProcess(pAccess, FALSE, pId);
+		pi.hThread = core::OpenThread(tAccess, FALSE, tId);
 
 		return isOpen();
 	}
@@ -236,19 +236,19 @@ namespace core {
 
 	bool Process::is64() const {
 		if (!isOpen()) return false;
-		BOOL res;
+		BOOL res = FALSE;
 		API(KERNEL32, IsWow64Process)(pi.hProcess, &res);
 		return res;
 	}
 
 	bool Process::suspend()
 	{
-		return isOpen() ? API(KERNEL32, SuspendThread)(pi.hThread) != -1 : false;
+		return isOpen() ? core::SuspendThread(pi.hThread) != -1 : false;
 	}
 
 	bool Process::resume()
 	{
-		return  isOpen() ? API(KERNEL32, ResumeThread)(pi.hThread) != -1 : false;
+		return isOpen() ? core::ResumeThread(pi.hThread) != -1 : false;
 	}
 
 	bool Process::kill()
@@ -256,8 +256,7 @@ namespace core {
 		if (!isOpen()) {
 			return false;
 		}
-		wait(1000);
-		bool res = API(KERNEL32, TerminateProcess)(pi.hProcess, 0);
+		bool res = core::TerminateProcess(pi.hProcess, 0);
 		close();
 		return res;
 	}
@@ -268,8 +267,8 @@ namespace core {
 
 	void Process::close()
 	{
-		if (pi.hProcess != nullptr) API(KERNEL32, CloseHandle)(pi.hProcess);
-		if (pi.hThread != nullptr) API(KERNEL32, CloseHandle)(pi.hThread);
+		if (pi.hProcess != nullptr) core::CloseHandle(pi.hProcess);
+		if (pi.hThread != nullptr) core::CloseHandle(pi.hThread);
 		clearLocalVariable();
 	}
 	void Process::clearLocalVariable()

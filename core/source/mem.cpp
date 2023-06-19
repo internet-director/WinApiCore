@@ -6,7 +6,7 @@ HANDLE proc_heap = nullptr;
 namespace core {
 	
 	void memInit() {
-		proc_heap = API(KERNEL32, GetProcessHeap)();
+		proc_heap = core::GetProcessHeap();
 	}
 	constexpr void* memcpy(void* dst, const void* src, size_t sz) {
 		for (volatile size_t i = 0; i < sz; i++) {
