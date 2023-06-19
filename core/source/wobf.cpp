@@ -4,13 +4,14 @@
 namespace core {
 	Wobf::Wobf() :
 		_LoadLibrary{ nullptr },
-		_GetProcAddress{ nullptr },
 		isInited{ false },
 		multiThInited{ false },
 		apiCounter{ 0 },
 		mutex{ INVALID_HANDLE_VALUE }
 	{
 		core::zeromem(&_lock, sizeof _lock);
+		core::zeromem(apiArray, sizeof apiArray);
+		core::zeromem(dllArray, sizeof dllArray);
 	}
 
 	bool Wobf::init() {
@@ -20,30 +21,37 @@ namespace core {
 
 			_LoadLibrary = static_cast<core::function_t<LoadLibraryA>>(GetApiAddr(dllArray[KERNEL32].addr,
 				core::hash32::calculate("LoadLibraryA")));
-			_GetProcAddress = static_cast<core::function_t<GetProcAddress>>(GetApiAddr(dllArray[KERNEL32].addr,
-				core::hash32::calculate("GetProcAddress")));
-			isInited = _LoadLibrary != nullptr && _GetProcAddress != nullptr;
+			isInited = _LoadLibrary != nullptr;
 		}
-		if (!multiThInited) multiThInited = initMutlithreading();
-		return isInited && multiThInited;
+		return isInited;
+	}
+	bool Wobf::initMutlithreading() {
+		if (!isInited) return false;
+		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CreateMutexW)>(false)(NULL, FALSE, L"wobf"))
+			== INVALID_HANDLE_VALUE) {
+			return false;
+		}
+
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, InitializeCriticalSection)>(false)(&_lock);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false);
+		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false);
+		return multiThInited = true;
 	}
 	bool Wobf::close() {
 		bool res = true;
 		if (multiThInited) {
-			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(ReleaseMutex)>(false)(mutex)) == nullptr) res = false;
-			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(CloseHandle)>(false)(mutex)) == nullptr) res = false;
+			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, ReleaseMutex)>(false)(mutex)) == nullptr) res = false;
+			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CloseHandle)>(false)(mutex)) == nullptr) res = false;
+		}
+
+		if (isInited) {
+			for (size_t i = 0; i < LibrarySize; i++) {
+				if (i == KERNEL32 || i == NTDLL) continue;
+				if (dllArray[i].addr == nullptr) continue;
+				API(KERNEL32, FreeLibrary)(static_cast<HMODULE>(dllArray[i].addr));
+			}
 		}
 		return res;
-	}
-	bool Wobf::initMutlithreading() {
-		if (!isInited) return false;
-		if ((mutex = getAddr<KERNEL32, API_FUNCTION_UNPACK(CreateMutexW)>()(NULL, FALSE, L"wobf"))
-			== INVALID_HANDLE_VALUE) return false;
-
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(InitializeCriticalSection)>()(&_lock);
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(EnterCriticalSection)>(false);
-		getAddr<KERNEL32, API_FUNCTION_UNPACK(LeaveCriticalSection)>(false);
-		return multiThInited = true;
 	}
 	PPEB Wobf::GetPEB()
 	{
@@ -73,13 +81,37 @@ namespace core {
 
 		return nullptr;
 	}
+	HANDLE Wobf::GetOrLoadDll(size_t hash)
+	{
+		LibraryNumber lib = FindLibraryNymberByHash(hash);
+		if (lib == LibrarySize) return nullptr;
+		return GetOrLoadDll(lib);
+	}
+	HANDLE Wobf::GetOrLoadDll(LibraryNumber libNumber)
+	{
+		if (dllArray[libNumber].addr != nullptr) return dllArray[libNumber].addr;
+		if (_LoadLibrary == nullptr) return nullptr;
+		dllArray[libNumber].addr = _LoadLibrary(dllNames[libNumber]);
+		dllArray[libNumber].hash = core::hash32::calculate(dllNames[libNumber]);
+		return dllArray[libNumber].addr;
+	}
+	LibraryNumber Wobf::FindLibraryNymberByHash(size_t hash) const
+	{
+		for (size_t i = 0; i < LibrarySize; i++) {
+			if (dllArray[i].hash == hash) return LibraryNumber(i);
+			if (core::hash32::calculate(dllNames[i]) == hash) return LibraryNumber(i);
+		}
+		return LibraryNumber::LibrarySize;
+	}
 	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
+		debug("\t");
 		if (locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
 
 		for (size_t i = 0; i < apiCounter; i++) {
 			if (apiArray[i].hash == fHash) {
+				if (locked) release();
 				return apiArray[i].addr;
 			}
 		}
@@ -89,8 +121,8 @@ namespace core {
 		PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)lib;
 		PIMAGE_NT_HEADERS nt = (PIMAGE_NT_HEADERS)rvatova(lib, dos->e_lfanew);
 		IMAGE_FILE_HEADER f = nt->FileHeader;
-		IMAGE_OPTIONAL_HEADER opt = nt->OptionalHeader;
-		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)rvatova(lib, opt.DataDirectory[0].VirtualAddress);
+		PIMAGE_DATA_DIRECTORY exportData = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)rvatova(lib, exportData->VirtualAddress);
 		PDWORD name = (PDWORD)rvatova(lib, data->AddressOfNames);
 		PDWORD functions = (PDWORD)rvatova(lib, data->AddressOfFunctions);
 		PWORD ordAddress = (PWORD)rvatova(lib, data->AddressOfNameOrdinals);
@@ -100,19 +132,40 @@ namespace core {
 			n = (char*)rvatova(lib, name[i]);
 			if (fHash == core::hash32::calculate(n)) {
 				if (locked) lock();
-				DWORD functionRVA = functions[ordAddress[i]];
+				size_t functionRVA = functions[ordAddress[i]];
 				HANDLE functionAddr = (HANDLE)rvatova(lib, functionRVA);
 
-				if (!isInited) {
-					apiArray[apiCounter].addr = functionAddr;
+				// function forwarded
+				if (functionRVA > (size_t)exportData->VirtualAddress &&
+					functionRVA < (size_t)exportData->VirtualAddress + exportData->Size) {
+					char dllName[MAX_PATH];
+					LPCSTR forwardedFunctionName = reinterpret_cast<LPCSTR>(rvatova(lib, functionRVA));
+					size_t dotIndex = core::find(forwardedFunctionName, '.',
+						core::strlen(forwardedFunctionName));
+
+					// invalid forwaring
+					if (dotIndex == core::npos) {
+						if (locked) release();
+						return nullptr;
+					}
+
+					core::memcpy(dllName, forwardedFunctionName, dotIndex);
+					core::memcpy(dllName + dotIndex, ".dll", 4);
+					dllName[dotIndex + 4] = 0;
+
+					HANDLE forwardedModule = GetOrLoadDll(core::hash32::calculate(dllName));
+					// TODO: fix recursion
+					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
 				}
-				else {
-					apiArray[apiCounter].addr = _GetProcAddress(HMODULE(lib), n);
+				if (functionAddr == nullptr) {
+					if (locked) release();
+					return nullptr;
 				}
-				apiArray[apiCounter].hash = fHash;
-				HANDLE result = apiArray[apiCounter++].addr;
+
+				apiArray[apiCounter].addr = functionAddr;
+				apiArray[apiCounter++].hash = fHash;
 				if (locked) release();
-				return result;
+				return functionAddr;
 			}
 		}
 		return nullptr;

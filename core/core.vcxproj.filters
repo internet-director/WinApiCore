@@ -54,7 +54,11 @@
     <ClInclude Include="include\core\StringObf.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="include\core\NtApi.h">
+=======
+    <ClInclude Include="include\core\stackArray.h">
+>>>>>>> 7357438517d30270cdaeb359947b6cd6df0799b3
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
@@ -86,7 +90,11 @@
     <ClCompile Include="source\StringObf.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="source\NtApi.cpp">
+=======
+    <ClCompile Include="source\core.cpp">
+>>>>>>> 7357438517d30270cdaeb359947b6cd6df0799b3
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

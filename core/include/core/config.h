@@ -20,6 +20,8 @@ namespace core {
 	typedef unsigned short     uint16_t;
 	typedef unsigned int       uint32_t;
 	typedef unsigned long long uint64_t;
+
+	constexpr size_t npos = size_t(-1);
 }
 
 typedef core::int8_t	int8_t;
@@ -30,6 +32,8 @@ typedef core::uint8_t	uint8_t;
 typedef core::uint16_t	uint16_t;
 typedef core::uint32_t	uint32_t;
 typedef core::uint64_t	uint64_t;
+
+constexpr size_t npos = core::npos;
 
 #ifndef _WIN64
 typedef core::uint32_t size_t;
@@ -62,15 +66,25 @@ typedef core::uint64_t size_t;
 
 #define USE_WINDOWS_DYNAMIC_IMPORT
 
-#ifndef DONT_EXPORT
+#define KEEPS_ALL_LOGS
+
+#if defined(USE_WINDOWS_DYNAMIC_IMPORT) and defined(_DEBUG)
+#define KEEPS_WOBF_LOGS
+#endif
+
+#ifdef CORE_EXPORTS
+#define CORE_EXPORT __declspec(dllexport)
 #define MEM_EXPORT __declspec(dllexport)
 #define NTAPI_EXPORT __declspec(dllexport)
+#define STACK_EXPORT __declspec(dllexport)
 #define THREAD_EXPORT __declspec(dllexport)
 #define PROCESS_EXPORT __declspec(dllexport)
 #define PROCESS_MONITOR_EXPORT __declspec(dllexport)
 #define WOBF_EXPORT __declspec(dllexport)
 #else
+#define CORE_EXPORT
 #define MEM_EXPORT
+#define STACK_EXPORT
 #define NTAPI_EXPORT
 #define THREAD_EXPORT
 #define PROCESS_EXPORT

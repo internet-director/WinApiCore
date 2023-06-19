@@ -104,6 +104,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -127,6 +128,10 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ExceptionHandling>false</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <TranslateIncludes>false</TranslateIncludes>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,6 +153,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -171,6 +177,10 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <ExceptionHandling>false</ExceptionHandling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <TranslateIncludes>false</TranslateIncludes>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -197,9 +207,11 @@
     <ClInclude Include="include\core\thread.h" />
     <ClInclude Include="include\core\wobf\wobf.h" />
     <ClInclude Include="include\core\StringObf.h" />
+    <ClInclude Include="include\core\stackArray.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\NtApi.cpp" />
+    <ClCompile Include="source\core.cpp" />
     <ClCompile Include="source\hash.cpp" />
     <ClCompile Include="source\debug.cpp" />
     <ClCompile Include="dllmain.cpp" />
