@@ -1,7 +1,7 @@
 #pragma once
 #include <core/config.h>
 
-#ifndef _DEBUG
+#ifndef KEEPS_ALL_LOGS
 struct debug {
 	debug(const CHAR* str) {
 	}

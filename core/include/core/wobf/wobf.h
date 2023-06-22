@@ -5,11 +5,7 @@
 #include <core/debug.h>
 #include <core/StringObf.h>
 
-#ifdef KEEPS_WOBF_LOGS
-#define API_FUNCTION_UNPACK(dll, X) core::hash32::calculate(# X), core::function_t<X>, conststr(# X), conststr(# dll)
-#else
 #define API_FUNCTION_UNPACK(dll, X) core::hash32::calculate(# X), core::function_t<X>
-#endif
 
 enum LibraryNumber {
 	KERNEL32,
@@ -82,37 +78,19 @@ namespace core {
 		}
 		PPEB GetPEB();
 
-#ifdef KEEPS_WOBF_LOGS
-		template<LibraryNumber lib, size_t hash, typename F, conststr functionName, conststr dllName>
-#else
 		template<LibraryNumber lib, size_t hash, typename F>
-#endif
 		F getAddr(bool locked = true) {
 			if (!isInited && !init()) {
 				debug(L"Cant init wobf!" END);
 				return nullptr;
 			}
 
-			debug("call API(");
-#ifdef KEEPS_WOBF_LOGS
-			{
-				debug(dllName.p);
-				debug(",");
-				debug(functionName.p);
-
-			}
-#endif
-			debug(L")" END);
-
 			if (lib == NTDLL) {
 				// TODO: direct syscalls
 			}
-			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 
 			GetOrLoadDll(lib);
 			F result = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
-
-			debug(END);
 			return result;
 		}
 		HANDLE GetOrLoadDll(size_t hash);

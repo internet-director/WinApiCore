@@ -105,7 +105,6 @@ namespace core {
 	}
 	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
 	{
-		debug("\t");
 		if (locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
 
