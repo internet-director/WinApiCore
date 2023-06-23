@@ -1,8 +1,115 @@
 #include <Windows.h>
 #include <core/core.h>
 
-#define VATORAW(section, offset) ( (size_t)section->PointerToRawData + (size_t)offset - (size_t)section->VirtualAddress )
+/*
+template<typename ...Args>
+NTSTATUS __fastcall asm_nt(Args... args);
+*/
+extern "C" NTSTATUS __fastcall asm_nt(HANDLE h);
+extern "C" NTSTATUS __fastcall asm_alloc(
+	IN HANDLE               ProcessHandle,
+	IN OUT PVOID * BaseAddress,
+	IN ULONG                ZeroBits,
+	IN OUT PULONG           RegionSize,
+	IN ULONG                AllocationType,
+	IN ULONG                Protect
+);
 
+//#define LOAD
+
+#ifdef LOAD
+#define VATORAW(section, offset) offset
+#else
+#define VATORAW(section, offset) ( (size_t)section->PointerToRawData + (size_t)offset - (size_t)section->VirtualAddress )
+#endif
+
+#define RVATOVA(x, y) ( (size_t)x + (size_t)y )
+
+static
+DWORD
+WINAPI
+RvaToOffset(
+	PIMAGE_NT_HEADERS NtHeaders,
+	DWORD Rva)
+{
+	PIMAGE_SECTION_HEADER SectionHeader;
+	DWORD                 i, Size;
+
+	if (Rva == 0) return 0;
+
+	SectionHeader = IMAGE_FIRST_SECTION(NtHeaders);
+
+	for (i = 0; i < NtHeaders->FileHeader.NumberOfSections; i++) {
+
+		Size = SectionHeader[i].Misc.VirtualSize ?
+			SectionHeader[i].Misc.VirtualSize : SectionHeader[i].SizeOfRawData;
+
+		if (SectionHeader[i].VirtualAddress <= Rva &&
+			Rva <= (DWORD)SectionHeader[i].VirtualAddress + SectionHeader[i].SizeOfRawData)
+		{
+			if (Rva >= SectionHeader[i].VirtualAddress &&
+				Rva < SectionHeader[i].VirtualAddress + Size) {
+
+				return SectionHeader[i].PointerToRawData + (Rva - SectionHeader[i].VirtualAddress);
+			}
+		}
+	}
+	return 0;
+}
+
+size_t syscallNumber(const char* ntFunc)
+{
+	size_t result = -1;
+	size_t fHash = core::hash32::calculate(ntFunc);
+	HANDLE h = CreateFileW(L"C:\\Windows\\system32\\ntdll.dll", GENERIC_READ, NULL, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (h != INVALID_HANDLE_VALUE) {
+		LARGE_INTEGER liFileSize;
+
+		if (GetFileSizeEx(h, &liFileSize)) {
+			HANDLE hMap = CreateFileMappingW(h, NULL, PAGE_READONLY, 0, 0, NULL);
+
+			if (hMap != nullptr) {
+#ifdef LOAD
+				HANDLE lpBasePtr = LoadLibraryA("ntdll.dll");
+#else
+				HANDLE lpBasePtr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+#endif
+				if (lpBasePtr != nullptr) {
+					PIMAGE_DOS_HEADER DosHeader = (PIMAGE_DOS_HEADER)lpBasePtr;
+					PIMAGE_NT_HEADERS NtHeaders = (PIMAGE_NT_HEADERS)((PBYTE)lpBasePtr + DosHeader->e_lfanew);
+					PIMAGE_DATA_DIRECTORY DataDirectory = (PIMAGE_DATA_DIRECTORY)NtHeaders->OptionalHeader.DataDirectory;
+					PIMAGE_EXPORT_DIRECTORY ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)RVATOVA(lpBasePtr,
+						RvaToOffset(NtHeaders, DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
+
+					PDWORD Names = (PDWORD)RVATOVA(lpBasePtr, RvaToOffset(NtHeaders, ExportDirectory->AddressOfNames));
+					PDWORD Functions = (PDWORD)RVATOVA(lpBasePtr, RvaToOffset(NtHeaders, ExportDirectory->AddressOfFunctions));
+					PWORD Ordinals = (PWORD)RVATOVA(lpBasePtr, RvaToOffset(NtHeaders, ExportDirectory->AddressOfNameOrdinals));
+
+					for (int i = 0; i < ExportDirectory->NumberOfNames; i++) {
+						char* name = (PCHAR)(RvaToOffset(NtHeaders, Names[i]) + (PBYTE)lpBasePtr);
+
+						if (fHash == core::hash32::calculate(name)) {
+							uint8_t* ptr = (uint8_t*)RVATOVA(lpBasePtr, RvaToOffset(NtHeaders, Functions[Ordinals[i]]));
+							//std::cout <<  (int)ptr[4] << " ";
+							result = ptr[4];
+							break;
+						}
+					}
+
+#ifdef LOAD
+					//CloseHandle(lpBasePtr);
+#else
+					UnmapViewOfFile(lpBasePtr);
+#endif
+				}
+				CloseHandle(hMap);
+			}
+		}
+		CloseHandle(h);
+	}
+	return result;
+}
 
 #ifdef _DEBUG 
 #include <iostream>
@@ -11,112 +118,50 @@ int main()
 int entry()
 #endif
 {
-	size_t fHash = core::hash32::calculate("NtCreateFile");
-	HANDLE h = API(KERNEL32, CreateFileW)(L"C:\\Windows\\system32\\ntdll.dll", GENERIC_READ, NULL, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	{
+		HANDLE ph = OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId());
+		if (ph != nullptr) {
+			HANDLE res = (HANDLE)0x1;
+			ULONG sz = 0x1000;
+			//NTSTATUS code = asm_alloc(ph, &res, 0, &sz, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+			NTSTATUS code = API(NTDLL, NtAllocateVirtualMemory)(ph, &res, 0, &sz, MEM_COMMIT, PAGE_READWRITE);
 
-	if (h != INVALID_HANDLE_VALUE) {
-		std::cout << "win";
+			uint8_t* ptr = (uint8_t*)res;
 
-		LARGE_INTEGER liFileSize;
-
-		if (GetFileSizeEx(h, &liFileSize)) {
-			HANDLE hMap = CreateFileMappingW(h, NULL, PAGE_READONLY, 0, 0, NULL);
-
-			if (hMap != nullptr) {
-				HANDLE lpBasePtr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-				if (lpBasePtr != nullptr) {
-					PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)lpBasePtr;
-					PIMAGE_NT_HEADERS nt = (PIMAGE_NT_HEADERS)core::Wobf::rvatova(lpBasePtr, dos->e_lfanew);
-					IMAGE_FILE_HEADER f = nt->FileHeader;
-					PIMAGE_DATA_DIRECTORY exportData = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-
-					PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(nt);
-					DWORD offset = 0;
-					for (size_t i = 0; i < f.NumberOfSections; i++, section++) {
-						if (exportData->VirtualAddress >= section->VirtualAddress &&
-							exportData->VirtualAddress < section->VirtualAddress + section->Misc.VirtualSize) {
-							break;
-						}
-					}
-
-					PIMAGE_EXPORT_DIRECTORY exportTable = (PIMAGE_EXPORT_DIRECTORY)core::Wobf::rvatova(lpBasePtr, VATORAW(section, exportData->VirtualAddress));
-
-					PDWORD name = (PDWORD)core::Wobf::rvatova(lpBasePtr, VATORAW(section, exportTable->AddressOfNames));
-					PDWORD functions = (PDWORD)core::Wobf::rvatova(lpBasePtr, VATORAW(section, exportTable->AddressOfFunctions));
-					PWORD ordAddress = (PWORD)core::Wobf::rvatova(lpBasePtr, VATORAW(section, exportTable->AddressOfNameOrdinals));
-
-					char* n = nullptr;
-					for (int i = 0; i < exportTable->NumberOfNames; i++) {
-						n = (char*)core::Wobf::rvatova(lpBasePtr, VATORAW(section, name[i]));
-						std::cout << n << "\n";
-						if (fHash == core::hash32::calculate(n)) {
-							size_t functionRVA = VATORAW(section, functions[ordAddress[i]]);
-							HANDLE functionAddr = (HANDLE)core::Wobf::rvatova(lpBasePtr, VATORAW(section, functionRVA));
-							for (int j = 0; j < 60; j++) {
-								std::cout << std::hex << (int)((uint8_t*)functionAddr)[j] << " ";
-							}
-							break;
-
-						}
-					}
-
-					UnmapViewOfFile(lpBasePtr);
-				}
+			for (int i = 0; i < sz; i++) {
+				ptr[i] = 0;
 			}
+
+			if (NT_SUCCESS(code))
+			{
+				std::cout << "WIN";
+			}
+			else {
+				std::cout << "error " << code << " " << GetLastError();
+			}
+			core::CloseHandle(ph);
 		}
-
-		/*
-		PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)lib;
-		PIMAGE_NT_HEADERS nt = (PIMAGE_NT_HEADERS)rvatova(lib, dos->e_lfanew);
-		IMAGE_FILE_HEADER f = nt->FileHeader;
-		PIMAGE_DATA_DIRECTORY exportData = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)rvatova(lib, exportData->VirtualAddress);
-		PDWORD name = (PDWORD)rvatova(lib, data->AddressOfNames);
-		PDWORD functions = (PDWORD)rvatova(lib, data->AddressOfFunctions);
-		PWORD ordAddress = (PWORD)rvatova(lib, data->AddressOfNameOrdinals);
-
-		char* n = nullptr;
-		for (int i = 0; i < data->NumberOfNames; i++) {
-			n = (char*)rvatova(lib, name[i]);
-			if (fHash == core::hash32::calculate(n)) {
-				if (locked) lock();
-				size_t functionRVA = functions[ordAddress[i]];
-				HANDLE functionAddr = (HANDLE)rvatova(lib, functionRVA);
-
-				// function forwarded
-				if (functionRVA > (size_t)exportData->VirtualAddress &&
-					functionRVA < (size_t)exportData->VirtualAddress + exportData->Size) {
-					char dllName[MAX_PATH];
-					LPCSTR forwardedFunctionName = reinterpret_cast<LPCSTR>(rvatova(lib, functionRVA));
-					size_t dotIndex = core::find(forwardedFunctionName, '.',
-						core::strlen(forwardedFunctionName));
-
-					// invalid forwaring
-					if (dotIndex == core::npos) {
-						if (locked) release();
-						return nullptr;
-					}
-
-					core::memcpy(dllName, forwardedFunctionName, dotIndex);
-					core::memcpy(dllName + dotIndex, ".dll", 4);
-					dllName[dotIndex + 4] = 0;
-
-					HANDLE forwardedModule = GetOrLoadDll(core::hash32::calculate(dllName));
-					// TODO: fix recursion
-					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
-				}
-				if (functionAddr == nullptr) {
-					if (locked) release();
-					return nullptr;
-				}
-
-				apiArray[apiCounter].addr = functionAddr;
-				apiArray[apiCounter++].hash = fHash;
-				if (locked) release();
-				return functionAddr;
-			}
-		}*/
+		return 0;
 	}
+	{
+		HANDLE f = API(KERNEL32, CreateFileW)(L"D:\\testfile.txt", GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		size_t num = syscallNumber("NtClose");
+		std::cout << num << "\n";
+		if (f != INVALID_HANDLE_VALUE) {
+			NTSTATUS code = asm_nt(f);
+
+			if (NT_SUCCESS(code)) {
+				std::cout << "work";
+			}
+			else {
+				std::cout << "error " << code << "\n" << core::CloseHandle(f);
+			}
+
+		}
+		return 0;
+	}
+
+	
 
 	return 0;
 	core::Process proc;

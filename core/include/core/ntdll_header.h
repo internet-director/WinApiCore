@@ -34,3 +34,12 @@ NTSYSAPI NTSTATUS NTAPI NtResumeThread(
 	IN HANDLE ThreadHandle,
 	OUT PULONG PreviousSuspendCount OPTIONAL
 );
+
+NTSYSAPI NTSTATUS NTAPI NtAllocateVirtualMemory(
+	IN HANDLE               ProcessHandle,
+	IN OUT PVOID* BaseAddress,
+	IN ULONG                ZeroBits,
+	IN OUT PULONG           RegionSize,
+	IN ULONG                AllocationType,
+	IN ULONG                Protect
+);
