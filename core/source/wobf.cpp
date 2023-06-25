@@ -169,4 +169,98 @@ namespace core {
 		}
 		return nullptr;
 	}
+
+
+
+	DirectSyscall::DirectSyscall() :
+		isInit{ false },
+		sysCounter{ 0 },
+		fileHeader{ INVALID_HANDLE_VALUE },
+		fileMap{ nullptr },
+		fileMapPointer{ nullptr }
+	{
+		core::zeromem(syscallArr, sizeof syscallArr);
+		if (!init()) close();
+	}
+
+	bool DirectSyscall::init()
+	{
+		this->fileHeader = API(KERNEL32, CreateFileW)(L"C:\\Windows\\system32\\ntdll.dll", GENERIC_READ,
+			FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (this->fileHeader != INVALID_HANDLE_VALUE) {
+			this->fileMap = API(KERNEL32, CreateFileMappingW)(fileHeader, NULL, PAGE_READONLY, 0, 0, NULL);
+
+			if (this->fileMap != nullptr) {
+				this->fileMapPointer = API(KERNEL32, MapViewOfFile)(fileMap, FILE_MAP_READ, 0, 0, 0);
+
+				if (this->fileMapPointer != nullptr) return true;
+			}
+		}
+		close();
+		return false;
+	}
+
+	void DirectSyscall::close()
+	{
+		if (this->fileMapPointer != nullptr) API(KERNEL32, UnmapViewOfFile)(fileMapPointer);
+		if (this->fileMap != nullptr) core::CloseHandle(fileMap);
+		if (this->fileHeader != nullptr) core::CloseHandle(fileHeader);
+	}
+
+	DWORD DirectSyscall::getSyscallNumber(uint32_t fHash)
+	{
+		DWORD result = -1;
+
+		for (size_t i = 0; i < __countof(syscallArr); i++) {
+			if (syscallArr[i].hash == fHash) {
+				return syscallArr[i].number;
+			}
+		}
+
+		if (fileMapPointer == nullptr) return result;
+
+		PIMAGE_DOS_HEADER DosHeader = (PIMAGE_DOS_HEADER)fileMapPointer;
+		PIMAGE_NT_HEADERS NtHeaders = (PIMAGE_NT_HEADERS)((PBYTE)fileMapPointer + DosHeader->e_lfanew);
+		PIMAGE_DATA_DIRECTORY DataDirectory = (PIMAGE_DATA_DIRECTORY)NtHeaders->OptionalHeader.DataDirectory;
+		PIMAGE_EXPORT_DIRECTORY ExportDirectory = (PIMAGE_EXPORT_DIRECTORY)RVATOVA(fileMapPointer,
+			RvaToOffset(NtHeaders, DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress));
+
+		PDWORD Names = (PDWORD)RVATOVA(fileMapPointer, RvaToOffset(NtHeaders, ExportDirectory->AddressOfNames));
+		PDWORD Functions = (PDWORD)RVATOVA(fileMapPointer, RvaToOffset(NtHeaders, ExportDirectory->AddressOfFunctions));
+		PWORD Ordinals = (PWORD)RVATOVA(fileMapPointer, RvaToOffset(NtHeaders, ExportDirectory->AddressOfNameOrdinals));
+
+		for (int i = 0; i < ExportDirectory->NumberOfNames; i++) {
+			char* name = (PCHAR)(RvaToOffset(NtHeaders, Names[i]) + (PBYTE)fileMapPointer);
+
+			if (fHash == core::hash32::calculate(name)) {
+				uint8_t* ptr = (uint8_t*)RVATOVA(fileMapPointer, RvaToOffset(NtHeaders, Functions[Ordinals[i]]));
+
+				syscallArr[sysCounter] = SyscallData(((DWORD*)(ptr + 4))[0], fHash);
+				return syscallArr[sysCounter++].number;
+			}
+		}
+		return (DWORD)-1;
+	}
+
+	size_t DirectSyscall::RvaToOffset(PIMAGE_NT_HEADERS NtHeaders, DWORD Rva) const {
+		if (Rva == 0 || NtHeaders == nullptr) return 0;
+
+		PIMAGE_SECTION_HEADER SectionHeader = IMAGE_FIRST_SECTION(NtHeaders);
+
+		for (size_t i = 0; i < NtHeaders->FileHeader.NumberOfSections; i++) {
+			size_t Size = SectionHeader[i].Misc.VirtualSize ?
+				SectionHeader[i].Misc.VirtualSize : SectionHeader[i].SizeOfRawData;
+
+			if (SectionHeader[i].VirtualAddress <= Rva &&
+				Rva <= (DWORD)SectionHeader[i].VirtualAddress + SectionHeader[i].SizeOfRawData)
+			{
+				if (Rva >= SectionHeader[i].VirtualAddress && Rva < SectionHeader[i].VirtualAddress + Size) {
+
+					return SectionHeader[i].PointerToRawData + (Rva - SectionHeader[i].VirtualAddress);
+				}
+			}
+		}
+		return 0;
+	}
 }
