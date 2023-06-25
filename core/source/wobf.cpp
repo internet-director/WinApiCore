@@ -155,6 +155,10 @@ namespace core {
 					HANDLE forwardedModule = GetOrLoadDll(core::hash32::calculate(dllName));
 					// TODO: fix recursion
 					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
+
+					if (apiCounter == __countof(apiArray) - 1) {
+						return functionAddr;
+					}
 				}
 				if (functionAddr == nullptr) {
 					if (locked) release();
@@ -235,8 +239,13 @@ namespace core {
 
 			if (fHash == core::hash32::calculate(name)) {
 				uint8_t* ptr = (uint8_t*)RVATOVA(fileMapPointer, RvaToOffset(NtHeaders, Functions[Ordinals[i]]));
+				DWORD syscallNumber = ((DWORD*)(ptr + 4))[0];
 
-				syscallArr[sysCounter] = SyscallData(((DWORD*)(ptr + 4))[0], fHash);
+				if (sysCounter == __countof(syscallArr) - 1) {
+					return syscallNumber;
+				}
+
+				syscallArr[sysCounter] = SyscallData(syscallNumber, fHash);
 				return syscallArr[sysCounter++].number;
 			}
 		}
