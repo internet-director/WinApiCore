@@ -4,6 +4,7 @@
 #include <core/hash.h>
 #include <core/debug.h>
 #include <core/StringObf.h>
+#include "syscall.h"
 
 #define API_FUNCTION_UNPACK(dll, X) core::hash32::calculate(# X), core::function_t<X>
 
@@ -85,10 +86,6 @@ namespace core {
 				return nullptr;
 			}
 
-			if (lib == NTDLL) {
-				// TODO: direct syscalls
-			}
-
 			GetOrLoadDll(lib);
 			F result = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 			return result;
@@ -127,4 +124,59 @@ namespace core {
 #define API(dll, func) API_ALWAYS(dll, func)
 #else
 #define API(dll, func) func
+#endif
+
+namespace core {
+	class WOBF_EXPORT DirectSyscall {
+		struct SyscallData {
+			DWORD     number = -1;
+			uint32_t    hash = 0;
+
+			constexpr SyscallData() = default;
+			constexpr SyscallData(DWORD number, uint32_t hash) :
+				number{ number }, hash{ hash } {}
+		};
+	public:
+		DirectSyscall();
+
+		bool init();
+		void close();
+
+		DWORD getSyscallNumber(uint32_t fHash);
+		DWORD getSyscallNumber(const char* ntFunc) {
+			return getSyscallNumber(core::hash32::calculate(ntFunc));
+		}
+
+		template<size_t fHash, typename F>
+		F sysCaller() {
+			if (!isInit && !init()) {
+				return nullptr;
+			}
+			DWORD num = getSyscallNumber(fHash);
+			SetCallNumber(num);
+			return reinterpret_cast<F>(SystemCall);
+		}
+
+	private:
+		bool isInit;
+		size_t sysCounter;
+		HANDLE fileHeader;
+		HANDLE fileMap;
+		HANDLE fileMapPointer;
+		SyscallData syscallArr[128];
+
+		size_t RvaToOffset(PIMAGE_NT_HEADERS NtHeaders, DWORD Rva) const;
+	} static _directSyscall;
+}
+
+#ifdef _WIN64
+
+#define SYS_ALWAYS(func) (core::_directSyscall.sysCaller<core::hash32::calculate(# func), core::function_t<func>>())
+#define SYS(func) SYS_ALWAYS(func)
+
+#else
+
+#define SYS_ALWAYS(func) API(NTDLL, func)
+#define SYS(func) SYS_ALWAYS(func)
+
 #endif
