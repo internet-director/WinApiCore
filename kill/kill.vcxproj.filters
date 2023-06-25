@@ -19,9 +19,4 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <MASM Include="test.asm">
-      <Filter>Исходные файлы</Filter>
-    </MASM>
-  </ItemGroup>
 </Project>

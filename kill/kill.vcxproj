@@ -174,9 +174,6 @@
   <ItemGroup>
     <ClCompile Include="kill.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <MASM Include="test.asm" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
