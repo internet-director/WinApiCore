@@ -8,7 +8,7 @@ int main()
 int entry()
 #endif
 {
-
+	core::init();
 	int argc = 0;
 	LPWSTR* argv = API(KERNEL32, CommandLineToArgvW)(API(KERNEL32, GetCommandLineW)(), &argc);
 
@@ -26,6 +26,6 @@ int entry()
 	else {
 		debug(L"error");
 	}
-
+	core::close();
 	return 0;
 }
