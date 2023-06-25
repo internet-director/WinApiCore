@@ -62,11 +62,14 @@ typedef core::uint64_t size_t;
 #define _INLINE_VAR inline
 #define __countof(X) sizeof(X) / sizeof(X[0])
 
+#define VATORAW(section, offset) ( (size_t)section->PointerToRawData + (size_t)offset - (size_t)section->VirtualAddress )
+#define RVATOVA(x, y) ( (size_t)x + (size_t)y )
+
 /*---------------------------------dll setting---------------------------------*/
 
 #define USE_WINDOWS_DYNAMIC_IMPORT
 
-//#define KEEPS_ALL_LOGS
+#define KEEPS_ALL_LOGS
 
 #if defined(USE_WINDOWS_DYNAMIC_IMPORT) and defined(_DEBUG)
 #define KEEPS_WOBF_LOGS
