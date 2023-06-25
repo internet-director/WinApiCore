@@ -1,5 +1,6 @@
 #pragma once
 #include "config.h"
+#include <core/types.h>
 #include <core/NtApi.h>
 
 namespace core
@@ -18,8 +19,8 @@ namespace core
 	}
 
 	template<typename T>
-	MEM_EXPORT constexpr T* zero(volatile T& obj) {
-		return zeromem(&obj, sizeof T);
+	MEM_EXPORT constexpr void zero(T& obj) {
+		zeromem(&obj, sizeof T);
 	}
 
 	MEM_EXPORT void* alloc(size_t sz);

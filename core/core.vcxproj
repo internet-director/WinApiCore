@@ -54,6 +54,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -202,6 +203,7 @@
     <ClInclude Include="include\core\ntdll_header.h" />
     <ClInclude Include="include\core\types.h" />
     <ClInclude Include="include\core\NtApi.h" />
+    <ClInclude Include="include\core\wobf\syscall.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="include\core\process.h" />
     <ClInclude Include="include\core\thread.h" />
@@ -210,6 +212,10 @@
     <ClInclude Include="include\core\stackArray.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\core\wobf\syscall.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="source\NtApi.cpp" />
     <ClCompile Include="source\core.cpp" />
     <ClCompile Include="source\hash.cpp" />
@@ -227,7 +233,17 @@
     <ClCompile Include="source\wobf.cpp" />
     <ClCompile Include="source\StringObf.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="include\core\wobf\syscall.asm">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </MASM>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>
