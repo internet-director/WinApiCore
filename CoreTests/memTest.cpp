@@ -63,3 +63,17 @@ TEST(MemoryTest, MemcmpDifflArray) {
 	EXPECT_EQ(core::memcmp(str1, str2, sz), std::memcmp(str1, str2, sz));
 	EXPECT_EQ(core::memcmp(str2, str1, sz), std::memcmp(str2, str1, sz));
 }
+
+TEST(MemoryTest, Alloc) {
+	return;
+	for (int i = 0; i < 32; i++) {
+		size_t sz = (1 << i);
+		uint8_t* ptr = (uint8_t*)core::alloc(sz);
+
+		if (ptr != nullptr) {
+			core::zeromem(ptr, sz);
+			Sleep(10);
+			core::free(ptr);
+		}
+	}
+}
