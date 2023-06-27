@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include <core/config.h>
 #include <core/types.h>
 #include <core/NtApi.h>
 

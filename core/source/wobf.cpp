@@ -184,7 +184,6 @@ namespace core {
 		fileMapPointer{ nullptr }
 	{
 		core::zeromem(syscallArr, sizeof syscallArr);
-		if (!init()) close();
 	}
 
 	bool DirectSyscall::init()

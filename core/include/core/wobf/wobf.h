@@ -63,6 +63,8 @@ namespace core {
 			uint32_t    hash = 0;
 
 			constexpr AddressData() = default;
+			constexpr AddressData(LPVOID addr, uint32_t hash) :
+				addr{ addr }, hash{ hash } {}
 		};
 
 	public:
@@ -87,8 +89,7 @@ namespace core {
 			}
 
 			GetOrLoadDll(lib);
-			F result = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
-			return result;
+			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));;
 		}
 		HANDLE GetOrLoadDll(size_t hash);
 		HANDLE GetOrLoadDll(LibraryNumber libNumber);
