@@ -1,5 +1,8 @@
 #pragma once
-#include <core/types.h>
+#include <core/config.h>
 
-extern "C" NTSTATUS __fastcall SystemCall();
-extern "C" void __fastcall SetCallNumber(DWORD num);
+extern "C" {
+	SYS_EXPORT NTSTATUS __fastcall SystemCall();
+	SYS_EXPORT NTSTATUS __fastcall NtAlwaysError();
+	SYS_EXPORT void __fastcall SetCallNumber(DWORD num);
+}

@@ -84,6 +84,7 @@ typedef core::uint64_t size_t;
 #define PROCESS_EXPORT __declspec(dllexport)
 #define PROCESS_MONITOR_EXPORT __declspec(dllexport)
 #define WOBF_EXPORT __declspec(dllexport)
+#define SYS_EXPORT __declspec(dllexport)
 #else
 #define CORE_EXPORT
 #define MEM_EXPORT
@@ -93,4 +94,5 @@ typedef core::uint64_t size_t;
 #define PROCESS_EXPORT
 #define PROCESS_MONITOR_EXPORT
 #define WOBF_EXPORT
+#define SYS_EXPORT
 #endif

@@ -128,7 +128,7 @@ namespace core {
 #endif
 
 namespace core {
-	class WOBF_EXPORT DirectSyscall {
+	class SYS_EXPORT DirectSyscall {
 		struct SyscallData {
 			DWORD     number = -1;
 			uint32_t    hash = 0;
@@ -151,9 +151,15 @@ namespace core {
 		template<size_t fHash, typename F>
 		F sysCaller() {
 			if (!isInit && !init()) {
-				return nullptr;
+				return reinterpret_cast<F>(NtAlwaysError);
 			}
+
 			DWORD num = getSyscallNumber(fHash);
+
+			if (num == DWORD(-1)) {
+				return reinterpret_cast<F>(NtAlwaysError);
+			}
+
 			SetCallNumber(num);
 			return reinterpret_cast<F>(SystemCall);
 		}
