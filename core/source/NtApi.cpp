@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "NtApi.h"
 
-
 namespace core {
 	bool NtApi::TerminateProcess(HANDLE hProcess, UINT uExitCode)
 	{
@@ -53,7 +52,7 @@ namespace core {
 		_In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes, _In_ DWORD dwCreationDisposition, _In_ DWORD dwFlagsAndAttributes, _In_opt_ HANDLE hTemplateFile
 	)
 	{
-		ULONG EaSize;
+		ULONG EaSize = 0;
 		ULONG CreateFlags = 0;
 		ULONG CreateDisposition;
 		RTL_RELATIVE_NAME_U RelativeName;
@@ -137,7 +136,7 @@ namespace core {
 		HANDLE result = nullptr;
 		IO_STATUS_BLOCK IoStatusBlock;
 
-		core::zeromem(&IoStatusBlock, sizeof(IoStatusBlock));
+		core::zeromem(&IoStatusBlock, sizeof IoStatusBlock);
 		OBJECT_ATTRIBUTES FileObjectAttributes;
 		InitializeObjectAttributes(&FileObjectAttributes, 
 			&uFileName, 
