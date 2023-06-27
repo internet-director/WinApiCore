@@ -130,12 +130,14 @@ namespace core {
 		for (int i = 0; i < data->NumberOfNames; i++) {
 			n = (char*)rvatova(lib, name[i]);
 			if (fHash == core::hash32::calculate(n)) {
-				if (locked) lock();
 				size_t functionRVA = functions[ordAddress[i]];
 				HANDLE functionAddr = (HANDLE)rvatova(lib, functionRVA);
 
+				if (functionAddr == lib)
+					continue;
+
 				// function forwarded
-				if (functionRVA > (size_t)exportData->VirtualAddress &&
+				if (functionRVA >= (size_t)exportData->VirtualAddress &&
 					functionRVA < (size_t)exportData->VirtualAddress + exportData->Size) {
 					char dllName[MAX_PATH];
 					LPCSTR forwardedFunctionName = reinterpret_cast<LPCSTR>(rvatova(lib, functionRVA));
@@ -144,7 +146,6 @@ namespace core {
 
 					// invalid forwaring
 					if (dotIndex == core::npos) {
-						if (locked) release();
 						return nullptr;
 					}
 
@@ -152,11 +153,14 @@ namespace core {
 					core::memcpy(dllName + dotIndex, ".dll", 4);
 					dllName[dotIndex + 4] = 0;
 
+					if (locked) lock();
+
 					HANDLE forwardedModule = GetOrLoadDll(core::hash32::calculate(dllName));
 					// TODO: fix recursion
 					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
 
 					if (apiCounter == __countof(apiArray) - 1) {
+						if (locked) release();
 						return functionAddr;
 					}
 				}
