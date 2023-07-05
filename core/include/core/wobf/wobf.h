@@ -81,7 +81,7 @@ namespace core {
 		}
 		PPEB GetPEB();
 
-		template<LibraryNumber lib, size_t hash, typename F>
+		template<LibraryNumber lib, uint32_t hash, typename F>
 		F getAddr(bool locked = true) {
 			if (!isInited && !init()) {
 				debug(L"Cant init wobf!" END);
@@ -91,9 +91,9 @@ namespace core {
 			GetOrLoadDll(lib);
 			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));;
 		}
-		HANDLE GetOrLoadDll(size_t hash);
+		HANDLE GetOrLoadDll(uint32_t hash);
 		HANDLE GetOrLoadDll(LibraryNumber libNumber);
-		LibraryNumber FindLibraryNymberByHash(size_t hash) const;
+		LibraryNumber FindLibraryNymberByHash(uint32_t hash) const;
 		static const char* GetLibraryName(LibraryNumber lib) {
 			if (lib == LibrarySize) return "";
 			return dllNames[lib];
@@ -148,7 +148,7 @@ namespace core {
 			return getSyscallNumber(core::hash32::calculate(ntFunc));
 		}
 
-		template<size_t fHash, typename F>
+		template<uint32_t fHash, typename F>
 		F sysCaller() {
 			if (!isInit && !init()) {
 				return reinterpret_cast<F>(NtAlwaysError);
