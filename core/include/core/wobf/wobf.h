@@ -115,7 +115,7 @@ namespace core {
 			if (isInited && multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false)(&_lock);
 		}
 		HANDLE GetDllBase(size_t libHash);
-		HANDLE GetApiAddr(const HANDLE lib, size_t fHash, bool locked = true);
+		HANDLE GetApiAddr(const HANDLE lib, uint32_t fHash, bool locked = true);
 	} static _wobf;
 }
 

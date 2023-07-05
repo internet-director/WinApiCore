@@ -81,7 +81,7 @@ namespace core {
 
 		return nullptr;
 	}
-	HANDLE Wobf::GetOrLoadDll(size_t hash)
+	HANDLE Wobf::GetOrLoadDll(uint32_t hash)
 	{
 		LibraryNumber lib = FindLibraryNymberByHash(hash);
 		if (lib == LibrarySize) return nullptr;
@@ -95,7 +95,7 @@ namespace core {
 		dllArray[libNumber].hash = core::hash32::calculate(dllNames[libNumber]);
 		return dllArray[libNumber].addr;
 	}
-	LibraryNumber Wobf::FindLibraryNymberByHash(size_t hash) const
+	LibraryNumber Wobf::FindLibraryNymberByHash(uint32_t hash) const
 	{
 		for (size_t i = 0; i < LibrarySize; i++) {
 			if (dllArray[i].hash == hash) return LibraryNumber(i);
@@ -103,7 +103,7 @@ namespace core {
 		}
 		return LibraryNumber::LibrarySize;
 	}
-	HANDLE Wobf::GetApiAddr(const HANDLE lib, size_t fHash, bool locked)
+	HANDLE Wobf::GetApiAddr(const HANDLE lib, uint32_t fHash, bool locked)
 	{
 		if (locked) lock();
 		if (apiCounter == __countof(apiArray)) return nullptr;
