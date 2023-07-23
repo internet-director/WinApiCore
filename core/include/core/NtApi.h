@@ -5,77 +5,87 @@ namespace core {
 	class NTAPI_EXPORT NtApi
 	{
 	public:
-		static HANDLE OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId) {
+		static HANDLE WINAPI OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId) {
 			return OpenProcTh(dwDesiredAccess, bInheritHandle, dwProcessId, false);
 		}
-		static HANDLE OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId) {
+		static HANDLE WINAPI OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId) {
 			return OpenProcTh(dwDesiredAccess, bInheritHandle, dwThreadId, true);
 		}
-		static bool TerminateProcess(HANDLE hProcess, UINT uExitCode);
-		static bool TerminateThread(HANDLE hProcess, UINT uExitCode);
-		static DWORD SuspendThread(HANDLE hThread);
-		static DWORD ResumeThread(HANDLE hThread);
-		static bool CloseHandle(HANDLE h);
-		static void RtlInitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString);
+		static bool WINAPI TerminateProcess(HANDLE hProcess, UINT uExitCode);
+		static bool WINAPI TerminateThread(HANDLE hProcess, UINT uExitCode);
+		static DWORD WINAPI SuspendThread(HANDLE hThread);
+		static DWORD WINAPI ResumeThread(HANDLE hThread);
+		static bool WINAPI CloseHandle(HANDLE h);
+		static void WINAPI RtlInitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString);
 
-		static HANDLE GetProcessHeap();
-		static HANDLE CreateFileW(_In_ LPCWSTR lpFileName, _In_ DWORD dwDesiredAccess, _In_ DWORD dwShareMode,
+		static HANDLE WINAPI CreateFileW(_In_ LPCWSTR lpFileName, _In_ DWORD dwDesiredAccess, _In_ DWORD dwShareMode,
 			_In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes, _In_ DWORD dwCreationDisposition, _In_ DWORD dwFlagsAndAttributes, _In_opt_ HANDLE hTemplateFile
 		);
+		static bool WINAPI WriteFile(_In_ HANDLE hFile, _In_reads_bytes_opt_(nNumberOfBytesToWrite) LPCVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite,
+			_Out_opt_ LPDWORD lpNumberOfBytesWritten, _Inout_opt_ LPOVERLAPPED lpOverlapped);
+
+		static HANDLE WINAPI GetProcessHeap();
+		static void WINAPI SetLastError(DWORD dwErrCode);
+		static void WINAPI BaseSetLastNTError(NTSTATUS status);
 
 	private:
-		static HANDLE OpenProcTh(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwId, bool isThread);
+		static HANDLE WINAPI OpenProcTh(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwId, bool isThread);
 	};
 
-	inline HANDLE OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId)
+	inline HANDLE WINAPI OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId)
 	{
 		return core::NtApi::OpenProcess(dwDesiredAccess, bInheritHandle, dwProcessId);
 	}
 
-	inline HANDLE OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId)
+	inline HANDLE WINAPI OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId)
 	{
 		return core::NtApi::OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId);
 	}
 
-	inline bool TerminateProcess(HANDLE hProcess, UINT uExitCode)
+	inline bool WINAPI TerminateProcess(HANDLE hProcess, UINT uExitCode)
 	{
 		return core::NtApi::TerminateProcess(hProcess, uExitCode);
 	}
 
-	inline bool TerminateThread(HANDLE hProcess, UINT uExitCode)
+	inline bool WINAPI TerminateThread(HANDLE hProcess, UINT uExitCode)
 	{
 		return core::NtApi::TerminateProcess(hProcess, uExitCode);
 	}
 
-	inline bool SuspendThread(HANDLE hThread)
+	inline bool WINAPI SuspendThread(HANDLE hThread)
 	{
 		return core::NtApi::SuspendThread(hThread);
 	}
 
-	inline bool ResumeThread(HANDLE hThread)
+	inline bool WINAPI ResumeThread(HANDLE hThread)
 	{
 		return core::NtApi::ResumeThread(hThread);
 	}
 
-	inline bool CloseHandle(HANDLE h)
+	inline bool WINAPI CloseHandle(HANDLE h)
 	{
 		return core::NtApi::CloseHandle(h);
 	}
 
-
-	inline HANDLE CreateFileW(_In_ LPCWSTR lpFileName, _In_ DWORD dwDesiredAccess, _In_ DWORD dwShareMode,
+	inline HANDLE WINAPI CreateFileW(_In_ LPCWSTR lpFileName, _In_ DWORD dwDesiredAccess, _In_ DWORD dwShareMode,
 		_In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes, _In_ DWORD dwCreationDisposition, _In_ DWORD dwFlagsAndAttributes, _In_opt_ HANDLE hTemplateFile
 	) {
 		return core::NtApi::CreateFileW(lpFileName, dwDesiredAccess, dwShareMode,
 			lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	}
 
-	inline HANDLE GetProcessHeap()
+	inline bool WINAPI WriteFile(_In_ HANDLE hFile, _In_reads_bytes_opt_(nNumberOfBytesToWrite) LPCVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite,
+		_Out_opt_ LPDWORD lpNumberOfBytesWritten, _Inout_opt_ LPOVERLAPPED lpOverlapped) {
+		return core::NtApi::WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite,
+			lpNumberOfBytesWritten, lpOverlapped);
+	}
+
+	inline HANDLE WINAPI GetProcessHeap()
 	{
 		return core::NtApi::GetProcessHeap();
 	}
 
-	inline void RtlInitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString) {
+	inline void WINAPI RtlInitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString) {
 		return core::NtApi::RtlInitUnicodeString(DestinationString, SourceString);
 	}
 }
