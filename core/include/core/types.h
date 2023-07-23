@@ -95,3 +95,318 @@ namespace core {
 	template<auto F>
 	using function_t = core::decay_t<decltype(F)>;
 }
+
+// winapi types, so as not to conflict with the default definition
+namespace wtype {
+    typedef struct _PEB_FREE_BLOCK {
+        struct _PEB_FREE_BLOCK* Next;
+        ULONG Size;
+    } PEB_FREE_BLOCK, * PPEB_FREE_BLOCK;
+
+#define PEBTEB_POINTER(x) x
+#define PEBTEB_STRUCT(x)  x
+
+    typedef struct _RTL_DRIVE_LETTER_CURDIR {
+        USHORT Flags;
+        USHORT Length;
+        ULONG TimeStamp;
+        STRING DosPath;
+    } RTL_DRIVE_LETTER_CURDIR, * PRTL_DRIVE_LETTER_CURDIR;
+
+    typedef struct _CURDIR {
+        UNICODE_STRING DosPath;
+        HANDLE Handle;
+    } CURDIR, * PCURDIR;
+
+#define RTL_MAX_DRIVE_LETTERS 32
+#define RTL_DRIVE_LETTER_VALID (USHORT)0x0001
+
+    typedef struct _RTL_USER_PROCESS_PARAMETERS {
+        ULONG MaximumLength;
+        ULONG Length;
+
+        ULONG Flags;
+        ULONG DebugFlags;
+
+        HANDLE ConsoleHandle;
+        ULONG  ConsoleFlags;
+        HANDLE StandardInput;
+        HANDLE StandardOutput;
+        HANDLE StandardError;
+
+        CURDIR CurrentDirectory;        // ProcessParameters
+        UNICODE_STRING DllPath;         // ProcessParameters
+        UNICODE_STRING ImagePathName;   // ProcessParameters
+        UNICODE_STRING CommandLine;     // ProcessParameters
+        PVOID Environment;              // NtAllocateVirtualMemory
+
+        ULONG StartingX;
+        ULONG StartingY;
+        ULONG CountX;
+        ULONG CountY;
+        ULONG CountCharsX;
+        ULONG CountCharsY;
+        ULONG FillAttribute;
+
+        ULONG WindowFlags;
+        ULONG ShowWindowFlags;
+        UNICODE_STRING WindowTitle;     // ProcessParameters
+        UNICODE_STRING DesktopInfo;     // ProcessParameters
+        UNICODE_STRING ShellInfo;       // ProcessParameters
+        UNICODE_STRING RuntimeData;     // ProcessParameters
+        RTL_DRIVE_LETTER_CURDIR CurrentDirectores[RTL_MAX_DRIVE_LETTERS];
+    } RTL_USER_PROCESS_PARAMETERS, * PRTL_USER_PROCESS_PARAMETERS;
+
+#define RTL_CRITSECT_TYPE 0
+#define RTL_RESOURCE_TYPE 1
+
+    typedef struct _RTL_CRITICAL_SECTION {
+        PRTL_CRITICAL_SECTION_DEBUG DebugInfo;
+
+        //
+        //  The following three fields control entering and exiting the critical
+        //  section for the resource
+        //
+
+        LONG LockCount;
+        LONG RecursionCount;
+        HANDLE OwningThread;        // from the thread's ClientId->UniqueThread
+        HANDLE LockSemaphore;
+        ULONG_PTR SpinCount;        // force size on 64-bit systems when packed
+    } RTL_CRITICAL_SECTION, * PRTL_CRITICAL_SECTION;
+
+    typedef struct PEBTEB_STRUCT(_PEB) {
+        BOOLEAN InheritedAddressSpace;      // These four fields cannot change unless the
+        BOOLEAN ReadImageFileExecOptions;   //
+        BOOLEAN BeingDebugged;              //
+        BOOLEAN SpareBool;                  //
+        PEBTEB_POINTER(HANDLE) Mutant;      // INITIAL_PEB structure is also updated.
+
+        PEBTEB_POINTER(PVOID) ImageBaseAddress;
+        PEBTEB_POINTER(PPEB_LDR_DATA) Ldr;
+        PEBTEB_POINTER(wtype::_RTL_USER_PROCESS_PARAMETERS*) ProcessParameters;
+        PEBTEB_POINTER(PVOID) SubSystemData;
+        PEBTEB_POINTER(PVOID) ProcessHeap;
+        PEBTEB_POINTER(wtype::_RTL_CRITICAL_SECTION*) FastPebLock;
+        PEBTEB_POINTER(PVOID) SparePtr1;
+        PEBTEB_POINTER(PVOID) SparePtr2;
+        ULONG EnvironmentUpdateCount;
+        PEBTEB_POINTER(PVOID) KernelCallbackTable;
+        ULONG SystemReserved[1];
+
+        struct {
+            ULONG ExecuteOptions : 2;
+            ULONG SpareBits : 30;
+        };
+
+
+        PEBTEB_POINTER(PPEB_FREE_BLOCK) FreeList;
+        ULONG TlsExpansionCounter;
+        PEBTEB_POINTER(PVOID) TlsBitmap;
+        ULONG TlsBitmapBits[2];         // TLS_MINIMUM_AVAILABLE bits
+        PEBTEB_POINTER(PVOID) ReadOnlySharedMemoryBase;
+        PEBTEB_POINTER(PVOID) ReadOnlySharedMemoryHeap;
+        PEBTEB_POINTER(PPVOID) ReadOnlyStaticServerData;
+        PEBTEB_POINTER(PVOID) AnsiCodePageData;
+        PEBTEB_POINTER(PVOID) OemCodePageData;
+        PEBTEB_POINTER(PVOID) UnicodeCaseTableData;
+
+        //
+        // Useful information for LdrpInitialize
+        ULONG NumberOfProcessors;
+        ULONG NtGlobalFlag;
+
+        //
+        // Passed up from MmCreatePeb from Session Manager registry key
+        //
+
+        LARGE_INTEGER CriticalSectionTimeout;
+        PEBTEB_POINTER(SIZE_T) HeapSegmentReserve;
+        PEBTEB_POINTER(SIZE_T) HeapSegmentCommit;
+        PEBTEB_POINTER(SIZE_T) HeapDeCommitTotalFreeThreshold;
+        PEBTEB_POINTER(SIZE_T) HeapDeCommitFreeBlockThreshold;
+
+        //
+        // Where heap manager keeps track of all heaps created for a process
+        // Fields initialized by MmCreatePeb.  ProcessHeaps is initialized
+        // to point to the first free byte after the PEB and MaximumNumberOfHeaps
+        // is computed from the page size used to hold the PEB, less the fixed
+        // size of this data structure.
+        //
+
+        ULONG NumberOfHeaps;
+        ULONG MaximumNumberOfHeaps;
+        PEBTEB_POINTER(PPVOID) ProcessHeaps;
+
+        //
+        //
+        PEBTEB_POINTER(PVOID) GdiSharedHandleTable;
+        PEBTEB_POINTER(PVOID) ProcessStarterHelper;
+        ULONG GdiDCAttributeList;
+        PEBTEB_POINTER(struct _RTL_CRITICAL_SECTION*) LoaderLock;
+
+        //
+        // Following fields filled in by MmCreatePeb from system values and/or
+        // image header.
+        //
+
+        ULONG OSMajorVersion;
+        ULONG OSMinorVersion;
+        USHORT OSBuildNumber;
+        USHORT OSCSDVersion;
+        ULONG OSPlatformId;
+        ULONG ImageSubsystem;
+        ULONG ImageSubsystemMajorVersion;
+        ULONG ImageSubsystemMinorVersion;
+        PEBTEB_POINTER(ULONG_PTR) ImageProcessAffinityMask;
+        PEBTEB_STRUCT(GDI_HANDLE_BUFFER) GdiHandleBuffer;
+        PEBTEB_POINTER(PPS_POST_PROCESS_INIT_ROUTINE) PostProcessInitRoutine;
+
+        PEBTEB_POINTER(PVOID) TlsExpansionBitmap;
+        ULONG TlsExpansionBitmapBits[32];   // TLS_EXPANSION_SLOTS bits
+
+        //
+        // Id of the Hydra session in which this process is running
+        //
+        ULONG SessionId;
+
+        //
+        // Filled in by LdrpInstallAppcompatBackend
+        //
+        ULARGE_INTEGER AppCompatFlags;
+
+        //
+        // ntuser appcompat flags
+        //
+        ULARGE_INTEGER AppCompatFlagsUser;
+
+        //
+        // Filled in by LdrpInstallAppcompatBackend
+        //
+        PEBTEB_POINTER(PVOID) pShimData;
+
+        //
+        // Filled in by LdrQueryImageFileExecutionOptions
+        //
+        PEBTEB_POINTER(PVOID) AppCompatInfo;
+
+        //
+        // Used by GetVersionExW as the szCSDVersion string
+        //
+        PEBTEB_STRUCT(UNICODE_STRING) CSDVersion;
+
+        //
+        // Fusion stuff
+        //
+        PEBTEB_POINTER(const struct _ACTIVATION_CONTEXT_DATA*) ActivationContextData;
+        PEBTEB_POINTER(struct _ASSEMBLY_STORAGE_MAP*) ProcessAssemblyStorageMap;
+        PEBTEB_POINTER(const struct _ACTIVATION_CONTEXT_DATA*) SystemDefaultActivationContextData;
+        PEBTEB_POINTER(struct _ASSEMBLY_STORAGE_MAP*) SystemAssemblyStorageMap;
+
+        //
+        // Enforced minimum initial commit stack
+        //
+        PEBTEB_POINTER(SIZE_T) MinimumStackCommit;
+
+        //
+        // Fiber local storage.
+        //
+
+        PEBTEB_POINTER(PPVOID) FlsCallback;
+        PEBTEB_STRUCT(LIST_ENTRY) FlsListHead;
+        PEBTEB_POINTER(PVOID) FlsBitmap;
+        ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
+        ULONG FlsHighIndex;
+    } PEBTEB_STRUCT(PEB), * PEBTEB_STRUCT(PPEB);
+
+#define STATIC_UNICODE_BUFFER_LENGTH 261
+#define WIN32_CLIENT_INFO_LENGTH 62
+#define WIN32_CLIENT_INFO_SPIN_COUNT 1
+
+#define GDI_BATCH_BUFFER_SIZE 310
+
+    typedef struct _GDI_TEB_BATCH {
+        ULONG Offset;
+        ULONG HDC;
+        ULONG Buffer[GDI_BATCH_BUFFER_SIZE];
+    } GDI_TEB_BATCH, * PGDI_TEB_BATCH;
+
+
+    //
+    // Wx86 thread state information
+    //
+
+    typedef struct _Wx86ThreadState {
+        PULONG  CallBx86Eip;
+        PVOID   DeallocationCpu;
+        BOOLEAN UseKnownWx86Dll;
+        char    OleStubInvoked;
+    } WX86THREAD, * PWX86THREAD;
+
+    typedef struct _TEB {
+        NT_TIB NtTib;
+        PVOID  EnvironmentPointer;
+        CLIENT_ID ClientId;
+        PVOID ActiveRpcHandle;
+        PVOID ThreadLocalStoragePointer;
+        LPVOID ProcessEnvironmentBlock;
+        ULONG LastErrorValue;
+        ULONG CountOfOwnedCriticalSections;
+        PVOID CsrClientThread;
+        PVOID Win32ThreadInfo;          // PtiCurrent
+        ULONG User32Reserved[26];       // user32.dll items
+        ULONG UserReserved[5];          // Winsrv SwitchStack
+        PVOID WOW32Reserved;            // used by WOW
+        LCID CurrentLocale;
+        ULONG FpSoftwareStatusRegister; // offset known by outsiders!
+#ifdef _IA64_
+        ULONGLONG Gdt[GDT_ENTRIES];         // Provide Gdt table entries
+        ULONGLONG GdtDescriptor;
+        ULONGLONG LdtDescriptor;
+        ULONGLONG FsDescriptor;
+#else  // _IA64_
+        PVOID SystemReserved1[54];      // Used by FP emulator
+#endif // _IA64_
+        NTSTATUS ExceptionCode;         // for RaiseUserException
+        UCHAR SpareBytes1[44];
+        GDI_TEB_BATCH GdiTebBatch;      // Gdi batching
+        CLIENT_ID RealClientId;
+        HANDLE GdiCachedProcessHandle;
+        ULONG GdiClientPID;
+        ULONG GdiClientTID;
+        PVOID GdiThreadLocalInfo;
+        ULONG Win32ClientInfo[WIN32_CLIENT_INFO_LENGTH];    // User32 Client Info
+        PVOID glDispatchTable[233];     // OpenGL
+        ULONG glReserved1[29];          // OpenGL
+        PVOID glReserved2;              // OpenGL
+        PVOID glSectionInfo;            // OpenGL
+        PVOID glSection;                // OpenGL
+        PVOID glTable;                  // OpenGL
+        PVOID glCurrentRC;              // OpenGL
+        PVOID glContext;                // OpenGL
+        ULONG LastStatusValue;
+        UNICODE_STRING StaticUnicodeString;
+        WCHAR StaticUnicodeBuffer[STATIC_UNICODE_BUFFER_LENGTH];
+#ifdef  _IA64_
+        PVOID DeallocationBStore;
+        PVOID BStoreLimit;
+#endif
+        PVOID DeallocationStack;
+        PVOID TlsSlots[TLS_MINIMUM_AVAILABLE];
+        LIST_ENTRY TlsLinks;
+        PVOID Vdm;
+        PVOID ReservedForNtRpc;
+        PVOID DbgSsReserved[2];
+        ULONG HardErrorsAreDisabled;
+        PVOID Instrumentation[16];
+        PVOID WinSockData;              // WinSock
+        ULONG GdiBatchCount;
+        ULONG Spare2;
+        ULONG Spare3;
+        PVOID ReservedForPerf;
+        PVOID ReservedForOle;
+        ULONG WaitingOnLoaderLock;
+        WX86THREAD Wx86Thread;
+        PVOID* TlsExpansionSlots;
+    } TEB, *PTEB;
+}

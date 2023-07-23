@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/types.h>
 #include <core/hash.h>
 #include <core/debug.h>
 #include <core/StringObf.h>
@@ -79,7 +80,8 @@ namespace core {
 		static size_t rvatova(B base, O offset) noexcept {
 			return size_t(base) + size_t(offset);
 		}
-		PPEB GetPEB();
+		static wtype::PPEB GetPEB();
+		static wtype::PTEB GetTEB();
 
 		template<LibraryNumber lib, uint32_t hash, typename F>
 		F getAddr(bool locked = true) {
@@ -89,7 +91,9 @@ namespace core {
 			}
 
 			GetOrLoadDll(lib);
-			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));;
+			F res = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));;
+
+			return res;
 		}
 		HANDLE GetOrLoadDll(uint32_t hash);
 		HANDLE GetOrLoadDll(LibraryNumber libNumber);
@@ -183,7 +187,7 @@ namespace core {
 
 #else
 
-#define SYS_ALWAYS(func) API(NTDLL, func)
+#define SYS_ALWAYS(func) API_ALWAYS(NTDLL, func)
 #define SYS(func) SYS_ALWAYS(func)
 
 #endif

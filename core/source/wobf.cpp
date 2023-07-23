@@ -41,7 +41,7 @@ namespace core {
 		bool res = true;
 		if (multiThInited) {
 			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, ReleaseMutex)>(false)(mutex)) == nullptr) res = false;
-			if (reinterpret_cast<HANDLE>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CloseHandle)>(false)(mutex)) == nullptr) res = false;
+			if (static_cast<BOOL>(getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, CloseHandle)>(false)(mutex)) == BOOL(0)) res = false;
 		}
 
 		if (isInited) {
@@ -53,16 +53,28 @@ namespace core {
 		}
 		return res;
 	}
-	PPEB Wobf::GetPEB()
+	wtype::PPEB Wobf::GetPEB()
 	{
-#ifdef _WIN64
-		return  (PPEB)__readgsqword(0x60);
+#ifdef _M_IX86
+		return reinterpret_cast<wtype::PPEB>(__readfsdword(0x30));
+#elif _M_AMD64
+		return reinterpret_cast<wtype::PPEB>(__readgsqword(0x60));
 #else
-		return  (PPEB)__readfsdword(0x30);
+#error unsupported architecture
+#endif
+	}
+	wtype::PTEB Wobf::GetTEB()
+	{
+#ifdef _M_IX86
+			return reinterpret_cast<wtype::PTEB>(__readfsdword(0x18));
+#elif _M_AMD64
+			return reinterpret_cast<wtype::PTEB>(__readgsqword(0x30));
+#else
+#error unsupported architecture
 #endif
 	}
 	HANDLE Wobf::GetDllBase(size_t libHash) {
-		PPEB peb = GetPEB();
+		PPEB peb = (PPEB)GetPEB();
 		PLDR_DATA_TABLE_ENTRY module_ptr, first_mod;
 
 		module_ptr = (PLDR_DATA_TABLE_ENTRY)peb->Ldr->InMemoryOrderModuleList.Flink;
@@ -189,11 +201,10 @@ namespace core {
 	{
 		core::zeromem(syscallArr, sizeof syscallArr);
 	}
-
 	bool DirectSyscall::init()
 	{
 		this->fileHeader = API(KERNEL32, CreateFileW)(L"C:\\Windows\\system32\\ntdll.dll", GENERIC_READ,
-			FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 		if (this->fileHeader != INVALID_HANDLE_VALUE) {
 			this->fileMap = API(KERNEL32, CreateFileMappingW)(fileHeader, NULL, PAGE_READONLY, 0, 0, NULL);
@@ -207,14 +218,12 @@ namespace core {
 		close();
 		return false;
 	}
-
 	void DirectSyscall::close()
 	{
 		if (this->fileMapPointer != nullptr) API(KERNEL32, UnmapViewOfFile)(fileMapPointer);
 		if (this->fileMap != nullptr) core::CloseHandle(fileMap);
 		if (this->fileHeader != nullptr) core::CloseHandle(fileHeader);
 	}
-
 	DWORD DirectSyscall::getSyscallNumber(uint32_t fHash)
 	{
 		DWORD result = -1;
@@ -254,7 +263,6 @@ namespace core {
 		}
 		return (DWORD)-1;
 	}
-
 	size_t DirectSyscall::RvaToOffset(PIMAGE_NT_HEADERS NtHeaders, DWORD Rva) const {
 		if (Rva == 0 || NtHeaders == nullptr) return 0;
 
