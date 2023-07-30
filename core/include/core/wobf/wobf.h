@@ -177,7 +177,7 @@ namespace core {
 	} static _directSyscall;
 }
 
-#ifndef _WIN66
+#ifdef _WIN66
 
 #define SYS_ALWAYS(func) (core::_directSyscall.sysCaller<core::hash32::calculate(# func), core::function_t<func>>())
 #define SYS(func) SYS_ALWAYS(func)
