@@ -76,12 +76,9 @@ namespace core {
 		bool init();
 		bool initMutlithreading();
 		bool close();
-		template<typename B, typename O>
-		static size_t rvatova(B base, O offset) noexcept {
-			return size_t(base) + size_t(offset);
-		}
-		static wtype::PPEB GetPEB();
+
 		static wtype::PTEB GetTEB();
+		static wtype::PPEB GetPEB();
 
 		template<LibraryNumber lib, uint32_t hash, typename F>
 		F getAddr(bool locked = true) {
@@ -180,7 +177,7 @@ namespace core {
 	} static _directSyscall;
 }
 
-#ifdef _WIN64
+#ifndef _WIN66
 
 #define SYS_ALWAYS(func) (core::_directSyscall.sysCaller<core::hash32::calculate(# func), core::function_t<func>>())
 #define SYS(func) SYS_ALWAYS(func)

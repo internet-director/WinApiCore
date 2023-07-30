@@ -25,8 +25,12 @@ namespace core {
 			_Out_opt_ LPDWORD lpNumberOfBytesWritten, _Inout_opt_ LPOVERLAPPED lpOverlapped);
 
 		static HANDLE WINAPI GetProcessHeap();
+		static HANDLE WINAPI GetCurrentProcess();
+		static DWORD WINAPI GetLastError();
 		static void WINAPI SetLastError(DWORD dwErrCode);
 		static void WINAPI BaseSetLastNTError(NTSTATUS status);
+
+		static bool WINAPI IsWow64Process(HANDLE hProcess, PBOOL Wow64Process);
 
 	private:
 		static HANDLE WINAPI OpenProcTh(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwId, bool isThread);
@@ -83,6 +87,30 @@ namespace core {
 	inline HANDLE WINAPI GetProcessHeap()
 	{
 		return core::NtApi::GetProcessHeap();
+	}
+
+	inline HANDLE WINAPI GetCurrentProcess()
+	{
+		return core::NtApi::GetCurrentProcess();
+	}
+
+	inline bool WINAPI IsWow64Process(HANDLE hProcess, PBOOL Wow64Process) {
+		return core::NtApi::IsWow64Process(hProcess, Wow64Process);
+	}
+
+	inline DWORD WINAPI GetLastError()
+	{
+		return core::NtApi::GetLastError();
+	}
+
+	inline void WINAPI SetLastError(DWORD dwErrCode)
+	{
+		return core::NtApi::SetLastError(dwErrCode);
+	}
+
+	inline void WINAPI BaseSetLastNTError(NTSTATUS status)
+	{
+		return core::NtApi::BaseSetLastNTError(status);
 	}
 
 	inline void WINAPI RtlInitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString) {

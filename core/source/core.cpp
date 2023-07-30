@@ -9,8 +9,9 @@ bool core::init()
 	return res;
 }
 
-void core::close()
+int core::close()
 {
 	_directSyscall.close();
 	_wobf.close();
+	return 0;
 }

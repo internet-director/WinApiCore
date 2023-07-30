@@ -35,7 +35,8 @@ namespace core {
 		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, InitializeCriticalSection)>(false)(&_lock);
 		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false);
 		getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, LeaveCriticalSection)>(false);
-		return multiThInited = true;
+		multiThInited = true;
+		return multiThInited;
 	}
 	bool Wobf::close() {
 		bool res = true;
@@ -53,16 +54,6 @@ namespace core {
 		}
 		return res;
 	}
-	wtype::PPEB Wobf::GetPEB()
-	{
-#ifdef _M_IX86
-		return reinterpret_cast<wtype::PPEB>(__readfsdword(0x30));
-#elif _M_AMD64
-		return reinterpret_cast<wtype::PPEB>(__readgsqword(0x60));
-#else
-#error unsupported architecture
-#endif
-	}
 	wtype::PTEB Wobf::GetTEB()
 	{
 #ifdef _M_IX86
@@ -72,6 +63,10 @@ namespace core {
 #else
 #error unsupported architecture
 #endif
+	}
+	wtype::PPEB Wobf::GetPEB()
+	{
+		return reinterpret_cast<wtype::PPEB>(Wobf::GetTEB()->ProcessEnvironmentBlock);
 	}
 	HANDLE Wobf::GetDllBase(size_t libHash) {
 		PPEB peb = (PPEB)GetPEB();
@@ -130,20 +125,20 @@ namespace core {
 		if (lib == nullptr) return nullptr;
 
 		PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)lib;
-		PIMAGE_NT_HEADERS nt = (PIMAGE_NT_HEADERS)rvatova(lib, dos->e_lfanew);
+		PIMAGE_NT_HEADERS nt = (PIMAGE_NT_HEADERS)RVATOVA(lib, dos->e_lfanew);
 		IMAGE_FILE_HEADER f = nt->FileHeader;
 		PIMAGE_DATA_DIRECTORY exportData = &nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
-		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)rvatova(lib, exportData->VirtualAddress);
-		PDWORD name = (PDWORD)rvatova(lib, data->AddressOfNames);
-		PDWORD functions = (PDWORD)rvatova(lib, data->AddressOfFunctions);
-		PWORD ordAddress = (PWORD)rvatova(lib, data->AddressOfNameOrdinals);
+		PIMAGE_EXPORT_DIRECTORY data = (PIMAGE_EXPORT_DIRECTORY)RVATOVA(lib, exportData->VirtualAddress);
+		PDWORD name = (PDWORD)RVATOVA(lib, data->AddressOfNames);
+		PDWORD functions = (PDWORD)RVATOVA(lib, data->AddressOfFunctions);
+		PWORD ordAddress = (PWORD)RVATOVA(lib, data->AddressOfNameOrdinals);
 
 		char* n = nullptr;
 		for (int i = 0; i < data->NumberOfNames; i++) {
-			n = (char*)rvatova(lib, name[i]);
+			n = (char*)RVATOVA(lib, name[i]);
 			if (fHash == core::hash32::calculate(n)) {
 				size_t functionRVA = functions[ordAddress[i]];
-				HANDLE functionAddr = (HANDLE)rvatova(lib, functionRVA);
+				HANDLE functionAddr = (HANDLE)RVATOVA(lib, functionRVA);
 
 				if (functionAddr == lib)
 					continue;
@@ -152,7 +147,7 @@ namespace core {
 				if (functionRVA >= (size_t)exportData->VirtualAddress &&
 					functionRVA < (size_t)exportData->VirtualAddress + exportData->Size) {
 					char dllName[MAX_PATH];
-					LPCSTR forwardedFunctionName = reinterpret_cast<LPCSTR>(rvatova(lib, functionRVA));
+					LPCSTR forwardedFunctionName = reinterpret_cast<LPCSTR>(RVATOVA(lib, functionRVA));
 					size_t dotIndex = core::find(forwardedFunctionName, '.',
 						core::strlen(forwardedFunctionName));
 

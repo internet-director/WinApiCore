@@ -10,9 +10,9 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="source\process.cpp" />
     <ClCompile Include="source\thread.cpp" />
-    <ClCompile Include="source\wobf.cpp" />
+    <ClCompile Include="source\wobf\wobf.cpp" />
     <ClCompile Include="source\StringObf.cpp" />
-    <ClCompile Include="include\core\wobf\syscall.cpp" />
+    <ClCompile Include="source\wobf\syscall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.h" />

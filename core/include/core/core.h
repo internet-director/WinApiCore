@@ -12,5 +12,5 @@
 
 namespace core {
 	bool CORE_EXPORT init();
-	void CORE_EXPORT close();
+	int CORE_EXPORT close();
 }

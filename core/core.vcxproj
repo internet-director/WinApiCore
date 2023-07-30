@@ -212,7 +212,7 @@
     <ClInclude Include="include\core\stackArray.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\core\wobf\syscall.cpp">
+    <ClCompile Include="source\wobf\syscall.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -230,7 +230,7 @@
     </ClCompile>
     <ClCompile Include="source\process.cpp" />
     <ClCompile Include="source\thread.cpp" />
-    <ClCompile Include="source\wobf.cpp" />
+    <ClCompile Include="source\wobf\wobf.cpp" />
     <ClCompile Include="source\StringObf.cpp" />
   </ItemGroup>
   <ItemGroup>

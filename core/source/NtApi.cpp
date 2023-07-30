@@ -44,10 +44,17 @@ namespace core {
 	}
 	HANDLE NtApi::GetProcessHeap()
 	{
-		//return API(KERNEL32, GetProcessHeap)();
-		return reinterpret_cast<HANDLE>(size_t(core::_wobf.GetPEB()->ProcessHeap));
+		return core::Wobf::GetPEB()->ProcessHeap;
 	}
-
+	HANDLE NtApi::GetCurrentProcess()
+	{
+		// return -1;
+		return API(KERNEL32, GetCurrentProcess)();
+	}
+	DWORD NtApi::GetLastError()
+	{
+		return core::Wobf::GetTEB()->LastErrorValue;
+	}
 	HANDLE NtApi::CreateFileW(_In_ LPCWSTR lpFileName, _In_ DWORD dwDesiredAccess, _In_ DWORD dwShareMode,
 		_In_opt_ LPSECURITY_ATTRIBUTES lpSecurityAttributes, _In_ DWORD dwCreationDisposition, _In_ DWORD dwFlagsAndAttributes, _In_opt_ HANDLE hTemplateFile
 	)
@@ -185,7 +192,6 @@ namespace core {
 
 		return result;
 	}
-
 	bool NtApi::WriteFile(_In_ HANDLE hFile, LPCVOID lpBuffer, _In_ DWORD nNumberOfBytesToWrite,
 		_Out_opt_ LPDWORD lpNumberOfBytesWritten, _Inout_opt_ LPOVERLAPPED lpOverlapped) 
 	{
@@ -321,13 +327,38 @@ namespace core {
 
 		return NT_SUCCESS(Status) ? Handle : nullptr;
 	}
-
 	void NtApi::SetLastError(DWORD dwErrCode)
 	{
 		Wobf::GetTEB()->LastErrorValue = (LONG)dwErrCode;
 	}
-
 	void NtApi::BaseSetLastNTError(NTSTATUS status) {
+		//Wobf::GetTEB()->LastStatusValue = status;
 		SetLastError(SYS(RtlNtStatusToDosError)(status));
+	}
+
+	bool NtApi::IsWow64Process(HANDLE hProcess, PBOOL Wow64Process)
+	{
+		if (Wow64Process == nullptr) { 
+			return false; 
+		}
+
+		ULONG_PTR Peb32 = 0;
+
+		NTSTATUS NtStatus = SYS(NtQueryInformationProcess)(
+			hProcess,
+			ProcessWow64Information,
+			&Peb32,
+			sizeof Peb32,
+			NULL
+		);
+
+		if (!NT_SUCCESS(NtStatus)) {
+			core::BaseSetLastNTError(NtStatus);
+		}
+		else {
+			(Peb32 == 0) ? (*Wow64Process = FALSE) : (*Wow64Process = TRUE);
+		}
+
+		return (NT_SUCCESS(NtStatus));
 	}
 }
