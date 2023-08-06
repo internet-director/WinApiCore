@@ -12,12 +12,7 @@ bool runWaiter(STARTUPINFO& si, PROCESS_INFORMATION& pi) {
 	core::zeromem(&pi, sizeof(pi));
 	si.cb = sizeof(si);
 
-#ifdef X64
-	const WCHAR* procName = L"..\\bin_x64\\waiter.exe";
-#else
-	const WCHAR* procName = L"..\\bin_x86\\waiter.exe";
-#endif
-
+	const WCHAR* procName = L"waiter.exe";
 	return CreateProcessW(procName, 0, 0, 0, 0, 0, 0, 0, &si, &pi);
 }
 

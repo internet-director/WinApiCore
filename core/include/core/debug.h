@@ -13,7 +13,7 @@ struct debug {
 	}
 };
 #else
-struct  debug
+struct debug
 {
 	debug(const CHAR* str) {
 		DWORD sz = lstrlenA(str);

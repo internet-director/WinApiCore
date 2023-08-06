@@ -88,9 +88,7 @@ namespace core {
 			}
 
 			GetOrLoadDll(lib);
-			F res = static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));;
-
-			return res;
+			return static_cast<F>(GetApiAddr(dllArray[lib].addr, hash, locked));
 		}
 		HANDLE GetOrLoadDll(uint32_t hash);
 		HANDLE GetOrLoadDll(LibraryNumber libNumber);

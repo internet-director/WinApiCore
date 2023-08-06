@@ -38,7 +38,7 @@ namespace core {
 			template<typename C>
 			constexpr static T calculate(const C* dst)
 				noexcept(core::is_same_v<C, char> || core::is_same_v<C, wchar_t>) {
-				return calculate(dst, core::strlen(dst));
+				return calculate<C>(dst, core::strlen(dst));
 			}
 			template<typename C>
 			constexpr static T calculate(const C* dst, size_t sz) noexcept;
@@ -52,16 +52,16 @@ namespace core {
 		template<typename C>
 		inline constexpr static T hash<T>::calculate(const C* dst, size_t sz) noexcept
 		{
-			T _hash = 0;
+			T h = 0;
 			if (dst == nullptr || sz == 0) {
-				return _hash;
+				return h;
 			}
 			for (size_t i = 0; i < sz; i++) {
 				C letter = dst[i];
 				if (letter >= C('A') && letter <= C('Z')) letter -= C('A') - C('a');
-				_hash = (_hash << 6) + (_hash << 16) - _hash + letter;
+				h = (h << 6) + (h << 16) - h + letter;
 			}
-			return _hash;
+			return h;
 		}
 	}
 
@@ -69,6 +69,11 @@ namespace core {
 	{
 	};
 
-	class hash64 : public hash_details::hash<uint64_t> {
+	class hash64 : public hash_details::hash<uint64_t>
+	{
+	};
+
+	class hash : public hash_details::hash<size_t> 
+	{
 	};
 }

@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <core/core.h>
 
+#define TOSTR(X) (# X)
 
 #ifdef _DEBUG 
 int main()
@@ -9,8 +10,10 @@ int entry()
 #endif
 {
 	core::init();
+
 	int argc = 0;
-	LPWSTR* argv = API(KERNEL32, CommandLineToArgvW)(API(KERNEL32, GetCommandLineW)(), &argc);
+	auto t = API(KERNEL32, GetCommandLineW)();
+	LPWSTR* argv = API(KERNEL32, CommandLineToArgvW)(t, &argc);
 
 	if (argc < 2) return false;
 
@@ -26,6 +29,5 @@ int entry()
 	else {
 		debug(L"error");
 	}
-	core::close();
-	return 0;
+	return core::close();
 }

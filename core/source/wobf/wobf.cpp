@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <core/wobf/wobf.h>
+#include <core/debug.h>
 
 namespace core {
 	Wobf::Wobf() :
@@ -136,7 +137,10 @@ namespace core {
 		char* n = nullptr;
 		for (int i = 0; i < data->NumberOfNames; i++) {
 			n = (char*)RVATOVA(lib, name[i]);
-			if (fHash == core::hash32::calculate(n)) {
+			//debug((const char*)n);
+			//debug(END);
+			auto h = core::hash32::calculate(n);
+			if (fHash == h) {
 				size_t functionRVA = functions[ordAddress[i]];
 				HANDLE functionAddr = (HANDLE)RVATOVA(lib, functionRVA);
 
