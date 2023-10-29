@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -370,6 +370,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\core\thread\critical_section.h" />
+    <ClInclude Include="include\core\thread\condition_variable.h" />
     <ClInclude Include="include\core\core.h" />
     <ClInclude Include="include\core\hash.h" />
     <ClInclude Include="include\core\config.h" />
@@ -380,14 +382,19 @@
     <ClInclude Include="include\core\types.h" />
     <ClInclude Include="include\core\NtApi.h" />
     <ClInclude Include="include\core\wobf\syscall.h" />
+    <ClInclude Include="include\core\thread\mutex.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="include\core\process.h" />
-    <ClInclude Include="include\core\thread.h" />
+    <ClInclude Include="include\core\thread\thread.h" />
     <ClInclude Include="include\core\wobf\wobf.h" />
     <ClInclude Include="include\core\StringObf.h" />
     <ClInclude Include="include\core\stackArray.h" />
+    <ClInclude Include="include\core\Vector.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\thread\critical_section.cpp" />
+    <ClCompile Include="source\thread\condition_variable.cpp" />
+    <ClCompile Include="source\thread\mutex.cpp" />
     <ClCompile Include="source\wobf\syscall.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Remote Debug|x64'">true</ExcludedFromBuild>
@@ -411,7 +418,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Remote Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="source\process.cpp" />
-    <ClCompile Include="source\thread.cpp" />
+    <ClCompile Include="source\thread\thread.cpp" />
     <ClCompile Include="source\wobf\wobf.cpp" />
     <ClCompile Include="source\StringObf.cpp" />
   </ItemGroup>

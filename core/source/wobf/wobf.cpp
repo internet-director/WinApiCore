@@ -22,6 +22,8 @@ namespace core {
 
 			_LoadLibrary = static_cast<core::function_t<LoadLibraryA>>(GetApiAddr(dllArray[KERNEL32].addr,
 				core::hash32::calculate("LoadLibraryA")));
+			_FreeLibrary= static_cast<core::function_t<FreeLibrary>>(GetApiAddr(dllArray[KERNEL32].addr,
+				core::hash32::calculate("FreeLibrary")));
 			isInited = _LoadLibrary != nullptr;
 		}
 		return isInited;
@@ -166,9 +168,13 @@ namespace core {
 
 					if (locked) lock();
 
-					HANDLE forwardedModule = GetOrLoadDll(core::hash32::calculate(dllName));
+					HANDLE forwardedModule = _LoadLibrary(dllName);
 					// TODO: fix recursion
-					functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
+					
+					if (forwardedModule) {
+						functionAddr = GetApiAddr(forwardedModule, core::hash32::calculate(forwardedFunctionName + dotIndex + 1), false);
+						_FreeLibrary(static_cast<HMODULE>(forwardedModule));
+					}
 
 					if (apiCounter == __countof(apiArray) - 1) {
 						if (locked) release();

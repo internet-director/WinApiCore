@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="memTest.cpp" />
+    <ClCompile Include="procTest.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="wobfTest.cpp" />
+    <ClCompile Include="VectorTest.cpp">
+      <Filter>vector</Filter>
+    </ClCompile>
+    <ClCompile Include="threads.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="element.h">
+      <Filter>vector</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="vector">
+      <UniqueIdentifier>{fd4db787-67b4-498b-9ebf-3abf80bed71a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

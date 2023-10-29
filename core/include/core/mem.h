@@ -24,6 +24,10 @@ namespace core
 	}
 
 	MEM_EXPORT void* alloc(size_t sz);
+	template<typename T>
+	MEM_EXPORT T* alloc(size_t sz) {
+		return static_cast<T*>(core::alloc(sz * sizeof(T))); 
+	}
 	MEM_EXPORT int free(void* heap);
 
 	template<typename T>
@@ -49,3 +53,8 @@ namespace core
 		return core::npos;
 	}
 }
+
+void* operator new(size_t size);
+void operator delete(void* p) noexcept;
+void operator delete(void* ptr, size_t) noexcept;
+void* _cdecl operator new(size_t _Size, void* _Where) noexcept;

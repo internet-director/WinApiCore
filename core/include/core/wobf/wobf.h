@@ -106,6 +106,7 @@ namespace core {
 
 		volatile AddressData apiArray[128], dllArray[LibraryNumber::LibrarySize];
 		core::function_t<LoadLibraryA> _LoadLibrary;
+		core::function_t<FreeLibrary> _FreeLibrary;
 
 		void lock() {
 			if (isInited && multiThInited) getAddr<KERNEL32, API_FUNCTION_UNPACK(KERNEL32, EnterCriticalSection)>(false)(&_lock);

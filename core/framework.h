@@ -6,9 +6,14 @@
 #include "include/core/wobf/wobf.h"
 #include "hash.h"
 #include "mem.h"
-#include "thread.h"
+#include "include/core/thread/thread.h"
+#include "include/core/thread/mutex.h"
+#include "include/core/thread/critical_section.h"
+#include "include/core/thread/condition_variable.h"
 #include "process.h"
 #include "debug.h"
+#include "stackArray.h"
+#include "Vector.h"
 
 /*
 #ifdef _DEBUG

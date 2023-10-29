@@ -9,10 +9,13 @@
     <ClCompile Include="source\mem.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="source\process.cpp" />
-    <ClCompile Include="source\thread.cpp" />
+    <ClCompile Include="source\thread\thread.cpp" />
     <ClCompile Include="source\wobf\wobf.cpp" />
     <ClCompile Include="source\StringObf.cpp" />
     <ClCompile Include="source\wobf\syscall.cpp" />
+    <ClCompile Include="source\thread\mutex.cpp" />
+    <ClCompile Include="source\thread\condition_variable.cpp" />
+    <ClCompile Include="source\thread\critical_section.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.h" />
@@ -26,11 +29,15 @@
     <ClInclude Include="include\core\NtApi.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="include\core\process.h" />
-    <ClInclude Include="include\core\thread.h" />
+    <ClInclude Include="include\core\thread\thread.h" />
     <ClInclude Include="include\core\wobf\wobf.h" />
     <ClInclude Include="include\core\StringObf.h" />
     <ClInclude Include="include\core\stackArray.h" />
     <ClInclude Include="include\core\wobf\syscall.h" />
+    <ClInclude Include="include\core\Vector.h" />
+    <ClInclude Include="include\core\thread\mutex.h" />
+    <ClInclude Include="include\core\thread\condition_variable.h" />
+    <ClInclude Include="include\core\thread\critical_section.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="include\core\wobf\syscall.asm" />

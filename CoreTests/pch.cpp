@@ -3,6 +3,7 @@
 //
 
 #include "pch.h"
+#include <set>
 
 #define RVATOVA(base, offset) ((SIZE_T)base + (SIZE_T)offset)
 

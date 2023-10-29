@@ -61,3 +61,23 @@ namespace core {
 		}
 	}
 }
+
+void* operator new(size_t size)
+{
+	return core::alloc(size);
+}
+
+void operator delete(void* p) noexcept
+{
+	core::free(p);
+}
+
+void operator delete(void* ptr, size_t) noexcept {
+	core::free(ptr);
+}
+
+void* _cdecl operator new(size_t _Size, void* _Where) noexcept
+{
+	(void)_Size;
+	return _Where;
+}
