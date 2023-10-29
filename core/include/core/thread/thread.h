@@ -11,18 +11,7 @@ namespace core {
 		thread(thread&& other) noexcept = default;
 		template< class Function, class... Args >
 		explicit thread(Function&& f, Args&&... args) {
-			struct Data {
-				Function f;
-				Args... arg;
-			};
-			Data data;
-			data.f = f;
-			
-			auto work = [](LPVOID data) -> DWORD { 
-				
-				return 0; 
-			};
-			hThread = CreateThread(nullptr, 0, work, &data, 0, nullptr);
+
 		}
 		thread(const thread&) = delete;
 

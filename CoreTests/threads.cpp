@@ -35,6 +35,10 @@ struct queue {
         return value;
     }
 
+	size_t size() {
+		return que.size();
+	}
+
 private:
 	size_t MAX_SIZE = 10000;
 	std::deque<T> que;
@@ -75,20 +79,22 @@ TEST(CriticalSectionTest, Empty) {
 // shitty test
 TEST(ConditionVariableTest, Queue) {
 	queue<int> q;
+	std::atomic<size_t> counter = 5000;
 	for (int i = 0; i < 5000; i++) q.push(i);
 	std::vector<std::thread> vec(10);
 	for (auto& it : vec) {
-		it = std::thread([&q]() {
+		it = std::thread([&q, &counter]() {
 			for (int i = 0; i < 10000; i++) {
-				if (rand() % 2) q.push(1);
-				else q.pop();
+				if (rand() % 2) q.push(1), counter++;
+				else q.pop(), counter--;
 			}
-			});
+		});
 	}
 
 	for (auto& it : vec) {
 		it.join();
 	}
+	ASSERT_EQ(counter, q.size());
 }
 
 TEST(Threadtest, Empty) {
