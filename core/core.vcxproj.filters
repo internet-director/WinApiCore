@@ -16,6 +16,7 @@
     <ClCompile Include="source\thread\mutex.cpp" />
     <ClCompile Include="source\thread\condition_variable.cpp" />
     <ClCompile Include="source\thread\critical_section.cpp" />
+    <ClCompile Include="source\function.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\core.h" />
@@ -38,6 +39,7 @@
     <ClInclude Include="include\core\thread\mutex.h" />
     <ClInclude Include="include\core\thread\condition_variable.h" />
     <ClInclude Include="include\core\thread\critical_section.h" />
+    <ClInclude Include="include\core\function.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="include\core\wobf\syscall.asm" />

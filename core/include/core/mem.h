@@ -57,4 +57,62 @@ namespace core
 void* operator new(size_t size);
 void operator delete(void* p) noexcept;
 void operator delete(void* ptr, size_t) noexcept;
-void* _cdecl operator new(size_t _Size, void* _Where) noexcept;
+void* WINAPI operator new(size_t _Size, void* _Where) noexcept;
+
+namespace core {
+	template<typename T>
+	class unique_ptr {
+		T* ptr = nullptr;
+
+	public:
+		unique_ptr() = default;
+		unique_ptr(unique_ptr&& other) noexcept {
+			if (this != &other) {
+				ptr = other.ptr;
+				other.ptr = nullptr;
+			}
+		}
+		unique_ptr(const unique_ptr&) = delete;
+		unique_ptr(T* ptr) noexcept: ptr{ptr} {}
+		~unique_ptr() {
+			reset(nullptr);
+		}
+
+		T* get() const noexcept {
+			return ptr;
+		}
+
+		unique_ptr& operator=(unique_ptr&& other) noexcept {
+			if (this != &other) {
+				unique_ptr(core::move(other)).swap(*this);
+			}
+			return *this;
+		}
+		unique_ptr& operator=(const unique_ptr& other) = delete;
+
+		void reset(T* rhs) noexcept {
+			if (ptr != nullptr) {
+				ptr->~T();
+				core::free(ptr);
+			}
+			ptr = rhs;
+		}
+
+		void swap(unique_ptr& other) noexcept {
+			core::swap(ptr, other.ptr);
+		}
+
+		bool operator!=(T* rhs) const noexcept {
+			return ptr != rhs;
+		}
+		bool operator==(T* rhs) const noexcept {
+			return ptr == rhs;
+		}
+	};
+
+	template<typename T, typename ...Args>
+	constexpr unique_ptr<T> make_unique(Args... args) {
+		auto* ptr = core::alloc<T>(1);
+		return unique_ptr<T>(new(ptr) T(core::forward<Args>(args)...));
+	}
+}

@@ -81,18 +81,17 @@ TEST(ConditionVariableTest, Queue) {
 	queue<int> q;
 	std::atomic<size_t> counter = 5000;
 	for (int i = 0; i < 5000; i++) q.push(i);
-	std::vector<std::thread> vec(10);
-	for (auto& it : vec) {
-		it = std::thread([&q, &counter]() {
-			for (int i = 0; i < 10000; i++) {
-				if (rand() % 2) q.push(1), counter++;
-				else q.pop(), counter--;
-			}
-		});
-	}
-
-	for (auto& it : vec) {
-		it.join();
+	{
+		std::vector<core::thread> vec(10);
+		for (auto& it : vec) {
+			it = core::thread([&q, &counter]() {
+				for (int i = 0; i < 10000; i++) {
+					//std::cout << "asdadasdasd";
+					if (rand() % 2) q.push(1), counter++;
+					else q.pop(), counter--;
+				}
+			});
+		}
 	}
 	ASSERT_EQ(counter, q.size());
 }
@@ -102,6 +101,18 @@ TEST(Threadtest, Empty) {
 	core::thread th([&c]() {
 		c++;
 		});
+	th.join();
+	ASSERT_EQ(c, 1);
+}
+
+TEST(Threadtest, ArgsTest) {
+	int c = 0;
+	core::thread th([&c](int a, const char* str) {
+		c++;
+		ASSERT_STREQ(str, "test_string");
+		ASSERT_EQ(a, 123);
+		ASSERT_NE(c, 0);
+		}, 123, "test_string");
 	th.join();
 	ASSERT_EQ(c, 1);
 }

@@ -7,6 +7,7 @@
 #include <core/hash.h>
 #include <core/mem.h>
 #include <core/process.h>
+#include <core/function.h>
 #include <core/thread/thread.h>
 #include <core/thread/mutex.h>
 #include <core/thread/critical_section.h>

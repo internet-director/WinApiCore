@@ -11,6 +11,6 @@ namespace core {
 
 		void enter();
 		void leave();
-		PCRITICAL_SECTION operator*() noexcept;
+		PCRITICAL_SECTION operator&() noexcept;
 	};
 }

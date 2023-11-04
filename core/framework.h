@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "stackArray.h"
 #include "Vector.h"
+#include "function.h"
 
 /*
 #ifdef _DEBUG

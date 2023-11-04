@@ -370,6 +370,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\core\function.h" />
     <ClInclude Include="include\core\thread\critical_section.h" />
     <ClInclude Include="include\core\thread\condition_variable.h" />
     <ClInclude Include="include\core\core.h" />
@@ -392,6 +393,7 @@
     <ClInclude Include="include\core\Vector.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\function.cpp" />
     <ClCompile Include="source\thread\critical_section.cpp" />
     <ClCompile Include="source\thread\condition_variable.cpp" />
     <ClCompile Include="source\thread\mutex.cpp" />

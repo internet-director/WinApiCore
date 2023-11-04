@@ -7,7 +7,7 @@ core::condition_variable::condition_variable()
 }
 
 void core::condition_variable::wait(critical_section& section) {
-	API(KERNEL32, SleepConditionVariableCS)(&cv, *section, INFINITE);
+	API(KERNEL32, SleepConditionVariableCS)(&cv, &section, INFINITE);
 }
 void core::condition_variable::notify_one() {
 	API(KERNEL32, WakeConditionVariable)(&cv);

@@ -2,6 +2,25 @@
 #include <core/config.h>
 
 namespace core {
+    template <class _Ty, _Ty _Val>
+        struct integral_constant {
+        static constexpr _Ty value = _Val;
+
+        using value_type = _Ty;
+        using type = integral_constant;
+
+        constexpr operator value_type() const noexcept {
+            return value;
+        }
+
+        _NODISCARD constexpr value_type operator()() const noexcept {
+            return value;
+        }
+    };
+
+    template <bool _Val>
+        using bool_constant = integral_constant<bool, _Val>;
+
 	template <class, class>
 	constexpr bool is_same_v = false;
 	template <class _Ty>
@@ -80,11 +99,137 @@ namespace core {
 
 	template<typename T>
 	using decay_t = typename decay<T>::type;
+    using max_align_t = double;
 
-	template <class _Ty>
-	constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {
-		return static_cast<remove_reference_t<_Ty>&&>(_Arg);
-	}
+
+    template <class _Ty, size_t _Len>
+    union _Align_type {
+        _Ty _Val;
+        char _Pad[_Len];
+    };
+
+    template <size_t _Len, size_t _Align, class _Ty, bool _Ok>
+    struct _Aligned;
+
+    template <size_t _Len, size_t _Align, class _Ty>
+    struct _Aligned<_Len, _Align, _Ty, true> {
+        using type = _Align_type<_Ty, _Len>;
+    };
+
+    template <size_t _Len, size_t _Align>
+    struct _Aligned<_Len, _Align, double, false> {
+        using type = _Align_type<max_align_t, _Len>;
+    };
+
+
+    template <size_t _Len, size_t _Align>
+    struct _Aligned<_Len, _Align, int, false> {
+        using _Next = double;
+        static constexpr bool _Fits = _Align <= alignof(_Next);
+        using type = typename _Aligned<_Len, _Align, _Next, _Fits>::type;
+    };
+
+    template <size_t _Len, size_t _Align>
+    struct _Aligned<_Len, _Align, short, false> {
+        using _Next = int;
+        static constexpr bool _Fits = _Align <= alignof(_Next);
+        using type = typename _Aligned<_Len, _Align, _Next, _Fits>::type;
+    };
+
+    template <size_t _Len, size_t _Align>
+    struct _Aligned<_Len, _Align, char, false> {
+        using _Next = short;
+        static constexpr bool _Fits = _Align <= alignof(_Next);
+        using type = typename _Aligned<_Len, _Align, _Next, _Fits>::type;
+    };
+
+    template <size_t _Len, size_t _Align = alignof(max_align_t)>
+    struct _Aligned_storage {
+        using _Next = char;
+        static constexpr bool _Fits = _Align <= alignof(_Next);
+        using type = typename _Aligned<_Len, _Align, _Next, _Fits>::type;
+    };
+
+    template <size_t _Len, size_t _Align = alignof(max_align_t)>
+    using _Aligned_storage_t = typename _Aligned_storage<_Len, _Align>::type;
+
+    template <size_t _Len, size_t _Align = alignof(max_align_t)>
+        struct aligned_storage {
+        using type = _Aligned_storage_t<_Len, _Align>;
+    };
+
+    template <size_t _Len, size_t _Align = alignof(max_align_t)>
+    using aligned_storage_t = _Aligned_storage_t<_Len, _Align>;
+
+    template <class _Ty>
+    inline constexpr bool is_trivially_move_constructible_v = __is_trivially_constructible(_Ty, _Ty);
+
+    template <class _To, class _From>
+        struct is_trivially_assignable : bool_constant<__is_trivially_assignable(_To, _From)> {
+    };
+
+    template <class _To, class _From>
+    inline constexpr bool is_trivially_assignable_v = __is_trivially_assignable(_To, _From);
+
+    template <class _Ty>
+        struct is_trivially_copy_assignable
+        : bool_constant<__is_trivially_assignable(add_lvalue_reference_t<_Ty>, add_lvalue_reference_t<const _Ty>)> {
+    };
+
+    template <class _Ty>
+    inline constexpr bool is_trivially_copy_assignable_v =
+        __is_trivially_assignable(add_lvalue_reference_t<_Ty>, add_lvalue_reference_t<const _Ty>);
+
+    template <class _Ty>
+        struct is_trivially_move_assignable : bool_constant<__is_trivially_assignable(add_lvalue_reference_t<_Ty>, _Ty)> {
+    };
+
+    template <class _Ty>
+    inline constexpr bool is_trivially_move_assignable_v = __is_trivially_assignable(add_lvalue_reference_t<_Ty>, _Ty);
+
+    template <class _Ty>
+        struct is_trivially_destructible : bool_constant<__is_trivially_destructible(_Ty)> {
+    };
+
+    template <class _Ty>
+    inline constexpr bool is_trivially_destructible_v = __is_trivially_destructible(_Ty);
+
+    template <class _Ty, class... _Args>
+        struct is_nothrow_constructible : bool_constant<__is_nothrow_constructible(_Ty, _Args...)> {
+    };
+
+    template <class _Ty, class... _Args>
+    inline constexpr bool is_nothrow_constructible_v = __is_nothrow_constructible(_Ty, _Args...);
+
+    template <class _Ty>
+        struct is_nothrow_copy_constructible
+        : bool_constant<__is_nothrow_constructible(_Ty, add_lvalue_reference_t<const _Ty>)> {
+    };
+
+    template <class _Ty>
+    inline constexpr bool is_nothrow_copy_constructible_v =
+        __is_nothrow_constructible(_Ty, add_lvalue_reference_t<const _Ty>);
+
+    template <class _Ty>
+        struct is_nothrow_default_constructible : bool_constant<__is_nothrow_constructible(_Ty)> {
+    };
+
+    template <class _Ty>
+    inline constexpr bool is_nothrow_default_constructible_v = __is_nothrow_constructible(_Ty);
+
+    template <class _Ty>
+        struct is_nothrow_move_constructible : bool_constant<__is_nothrow_constructible(_Ty, _Ty)> {
+    };
+
+    template <class _Ty>
+    constexpr _Ty&& forward(remove_reference_t<_Ty>& _Arg) noexcept {
+        return static_cast<_Ty&&>(_Arg);
+    }
+
+    template <class _Ty>
+    constexpr remove_reference_t<_Ty>&& move(_Ty&& _Arg) noexcept {
+        return static_cast<remove_reference_t<_Ty>&&>(_Arg);
+    }
 
 	template<typename T> void swap(T& t1, T& t2) noexcept {
 		T temp = core::move(t1);

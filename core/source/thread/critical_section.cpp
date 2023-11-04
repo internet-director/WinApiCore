@@ -21,7 +21,7 @@ void core::critical_section::leave()
 	API(KERNEL32, LeaveCriticalSection)(&section);
 }
 
-PCRITICAL_SECTION core::critical_section::operator*() noexcept
+PCRITICAL_SECTION core::critical_section::operator&() noexcept
 {
 	return &section;
 }

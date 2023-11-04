@@ -1,36 +1,53 @@
 #include <windows.h>
 #include <iostream>
-#include <functional>
+#include <core/core.h>
+
 
 DWORD WINAPI ThreadProc(LPVOID lpParameter) {
-    auto lambdaFunction = reinterpret_cast<std::function<void()>*>(lpParameter);
+    auto lambdaFunction = reinterpret_cast<core::function<void(LPVOID)>*>(lpParameter);
     (*lambdaFunction)();
     return 0;
 }
 
-template< class Function, class... Args >
-void test(Function&& f, Args&&... args) {
-    auto lambda = [f = std::forward<Function>(f), ...captured_args = std::forward<Args>(args)]() {
-        f(captured_args...);
-        };
+class thread {
+	core::function<void()> func;
+	HANDLE hThread = nullptr;
+	bool joined = false;
+	DWORD id;
 
-    std::function<void()> lambdaFunction = std::function<void()>(lambda);
+public:
+	thread() noexcept = default;
+	thread(thread&& other) noexcept = default;
+	template< class Function, class... Args >
+	explicit thread(Function&& f, Args&&... args) {
+        auto lambda = [f = std::forward<Function>(f), ...captured_args = std::forward<Args>(args)]() {
+            f(captured_args...);
+            };
 
-    HANDLE hThread = CreateThread(NULL, 0, ThreadProc, &lambdaFunction, 0, NULL);
-    if (hThread) {
-        WaitForSingleObject(hThread, INFINITE);
-        CloseHandle(hThread);
-    }
-}
+		core::function<void()> fnc = lambda;
+		hThread = CreateThread(NULL, 0, ThreadProc, &fnc, 0, &id);
+        join();
+	}
+	thread(const thread&) = delete;
+	~thread() {
+		if (!joined) join();
+		core::CloseHandle(hThread);
+	}
+
+	void join() {
+		API(KERNEL32, WaitForSingleObject)(hThread, INFINITE);
+		joined = true;
+	}
+};
 
 int main() {
-    // Ваша лямбда-функция
     int a = time(0);
 
-    test([&a](int k, std::string str) {
+	core::thread aa([&a](int k, std::string str) {
         for (int i = 0; i < 10; i++) {
             std::cout << k << " " << a << " " << str << std::endl;
         }
-        }, 123, "data_kal");
+    }, 123, "data_kal");
+	aa.join();
     return 0;
 }
