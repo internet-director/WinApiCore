@@ -32,6 +32,8 @@ namespace core {
 
 		static bool WINAPI IsWow64Process(HANDLE hProcess, PBOOL Wow64Process);
 
+		static LPSYSTEM_INFO WINAPI GetSystemInfo();
+
 	private:
 		static HANDLE WINAPI OpenProcTh(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwId, bool isThread);
 	};

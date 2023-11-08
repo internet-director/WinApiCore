@@ -44,7 +44,7 @@ namespace core {
 		return API(KERNEL32, HeapAlloc)(proc_heap, NULL, sz);
 	}
 
-	int free(void* heap)
+	int free(void* heap) noexcept
 	{
 		return API(KERNEL32, HeapFree)(proc_heap, NULL, heap);
 	}

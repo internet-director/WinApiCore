@@ -361,4 +361,10 @@ namespace core {
 
 		return (NT_SUCCESS(NtStatus));
 	}
+
+	LPSYSTEM_INFO __stdcall NtApi::GetSystemInfo()
+	{
+		API(KERNEL32, GetSystemInfo)();
+		return LPSYSTEM_INFO();
+	}
 }

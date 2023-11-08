@@ -24,11 +24,13 @@ namespace core
 	}
 
 	MEM_EXPORT void* alloc(size_t sz);
+
 	template<typename T>
-	MEM_EXPORT T* alloc(size_t sz) {
+	MEM_EXPORT T* alloc(size_t sz = 1) {
 		return static_cast<T*>(core::alloc(sz * sizeof(T))); 
 	}
-	MEM_EXPORT int free(void* heap);
+
+	MEM_EXPORT int free(void* heap) noexcept;
 
 	template<typename T>
 	MEM_EXPORT T* talloc(size_t sz) {
@@ -58,6 +60,19 @@ void* operator new(size_t size);
 void operator delete(void* p) noexcept;
 void operator delete(void* ptr, size_t) noexcept;
 void* WINAPI operator new(size_t _Size, void* _Where) noexcept;
+
+namespace core {
+	template<typename T, typename... Args>
+	MEM_EXPORT T* constuct(size_t sz, Args... args) {
+		T* ptr = core::alloc<T>(sz);
+		if (ptr != nullptr) {
+			for (size_t i = 0; i < sz; i++) {
+				new(&ptr[i]) T(core::forward<Args>(args)...);
+			}
+		}
+		return ptr;
+	}
+}
 
 namespace core {
 	template<typename T>
