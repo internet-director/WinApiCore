@@ -5,6 +5,7 @@
 #include <core/hash.h>
 #include <core/debug.h>
 #include <core/StringObf.h>
+#include <core/ntdll_header.h>
 #include "syscall.h"
 
 #define API_FUNCTION_UNPACK(dll, X) core::hash32::calculate(# X), core::function_t<X>

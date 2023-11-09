@@ -11,6 +11,10 @@ namespace core {
 		static HANDLE WINAPI OpenThread(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwThreadId) {
 			return OpenProcTh(dwDesiredAccess, bInheritHandle, dwThreadId, true);
 		}
+		static HANDLE CreateMutexW(LPSECURITY_ATTRIBUTES lpMutexAttributes, BOOL bInitialOwner, LPCWSTR lpName);
+		static bool ReleaseMutex(HANDLE hMutex);
+		static DWORD WINAPI WaitForSingleObject(_In_ HANDLE hHandle, _In_ DWORD dwMilliseconds);
+		static DWORD WINAPI WaitForSingleObjectEx(_In_ HANDLE hHandle, _In_ DWORD dwMilliseconds, _In_ BOOL bAlertable);
 		static bool WINAPI TerminateProcess(HANDLE hProcess, UINT uExitCode);
 		static bool WINAPI TerminateThread(HANDLE hProcess, UINT uExitCode);
 		static DWORD WINAPI SuspendThread(HANDLE hThread);
@@ -36,6 +40,12 @@ namespace core {
 
 	private:
 		static HANDLE WINAPI OpenProcTh(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwId, bool isThread);
+		static void GetSystemInfoInternal(
+			IN wtype::PSYSTEM_BASIC_INFORMATION BasicInfo,
+			IN wtype::PSYSTEM_PROCESSOR_INFORMATION ProcessorInfo,
+			OUT LPSYSTEM_INFO lpSystemInfo
+		);
+		static PLARGE_INTEGER BaseFormatTimeOut(PLARGE_INTEGER TimeOut, DWORD Milliseconds);
 	};
 
 	inline HANDLE WINAPI OpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId)
@@ -117,5 +127,21 @@ namespace core {
 
 	inline void WINAPI RtlInitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString) {
 		return core::NtApi::RtlInitUnicodeString(DestinationString, SourceString);
+	}
+
+	inline LPSYSTEM_INFO WINAPI GetSystemInfo() {
+		return core::NtApi::GetSystemInfo();
+	}
+
+	inline static DWORD WINAPI WaitForSingleObject(_In_ HANDLE hHandle, _In_ DWORD dwMilliseconds) {
+		return core::NtApi::WaitForSingleObject(hHandle, dwMilliseconds);
+	}
+
+	inline static HANDLE CreateMutexW(LPSECURITY_ATTRIBUTES lpMutexAttributes, BOOL bInitialOwner, LPCWSTR lpName) {
+		return core::NtApi::CreateMutexW(lpMutexAttributes, bInitialOwner, lpName);
+	}
+
+	inline static bool ReleaseMutex(HANDLE hMutex) {
+		return core::NtApi::ReleaseMutex(hMutex);
 	}
 }

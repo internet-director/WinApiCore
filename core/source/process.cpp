@@ -262,7 +262,7 @@ namespace core {
 	}
 
 	bool Process::wait(size_t tm) {
-		return API(KERNEL32, WaitForSingleObject)(pi.hProcess, tm);
+		return core::WaitForSingleObject(pi.hProcess, tm);
 	}
 
 	void Process::close()

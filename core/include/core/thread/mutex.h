@@ -11,6 +11,7 @@ namespace core {
 		mutex();
 		~mutex();
 
+		bool inited() const noexcept { return _mutex; }
 		void lock();
 		bool try_lock() noexcept;
 		void unlock();

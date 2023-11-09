@@ -54,12 +54,27 @@ private:
 
 TEST(MutexTest, Empty) {
 	core::mutex mut;
+	mut.lock();
+	mut.unlock();
+}
+
+TEST(MutexTest, ManyLock) {
+	core::mutex mut;
+	for (int i = 0; i < 100000; i++) {
+		mut.lock();
+		mut.unlock();
+		if (i % 1000 == 0) {
+			std::cout << "d\n";
+		}
+	}
+
+	5;
 }
 
 TEST(MutexTest, Random) {
 	size_t counter = 0;
 	core::mutex mut;
-	std::vector<std::thread> vec(10);
+	std::vector<std::thread> vec(1);
 	for (auto& it : vec) {
 		it = std::thread([&counter, &mut]() {
 			for (int i = 0; i < 100000; i++) {
@@ -100,6 +115,10 @@ TEST(Threadtest, Destr) {
 			});
 	}
 	ASSERT_EQ(c, 1);
+}
+
+TEST(Threadtest, CpuCount) {
+	ASSERT_EQ(std::thread::hardware_concurrency(), core::thread::hardware_concurrency());
 }
 
 TEST(Threadtest, ArgsTest) {

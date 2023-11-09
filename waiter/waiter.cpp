@@ -35,7 +35,7 @@ public:
 	}
 
 	void join() {
-		API(KERNEL32, WaitForSingleObject)(hThread, INFINITE);
+		core::WaitForSingleObject(hThread, INFINITE);
 		joined = true;
 	}
 };

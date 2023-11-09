@@ -1,7 +1,196 @@
 #include "pch.h"
 #include "NtApi.h"
 
+static SYSTEM_INFO var;
+BOOLEAN RtlpNotAllowingMultipleActivation = FALSE;
+HANDLE BaseDllHandle = NULL;
+HANDLE BaseNamedObjectDirectory = NULL;
+
 namespace core {
+	void RtlActivateActivationContextUnsafeFast(
+			wtype::PRTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME Frame,
+			wtype::PACTIVATION_CONTEXT ActivationContext
+		)
+	{
+		const auto Teb = Wobf::GetTEB();
+		const wtype::PRTL_ACTIVATION_CONTEXT_STACK_FRAME pStackFrame =
+			(wtype::PRTL_ACTIVATION_CONTEXT_STACK_FRAME)Teb->ActivationContextStack.ActiveFrame;
+		//ASSERT(Frame->Format == RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME_FORMAT_WHISTLER);
+		//ASSERT(Frame->Size >= sizeof(RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME));
+
+		if ((((pStackFrame == NULL) && (ActivationContext == NULL)) ||
+			(pStackFrame && (pStackFrame->ActivationContext == ActivationContext)))
+			&& !RtlpNotAllowingMultipleActivation)
+		{
+			Frame->Frame.Flags |= RTL_ACTIVATION_CONTEXT_STACK_FRAME_FLAG_NOT_REALLY_ACTIVATED;
+		}
+		else
+		{
+			Frame->Frame.Previous = static_cast<wtype::PRTL_ACTIVATION_CONTEXT_STACK_FRAME>(Teb->ActivationContextStack.ActiveFrame);
+			Frame->Frame.ActivationContext = ActivationContext;
+			Frame->Frame.Flags = 0;
+			Teb->ActivationContextStack.ActiveFrame = &Frame->Frame;
+		}
+	}
+	void RtlDeactivateActivationContextUnsafeFast(
+			wtype::PRTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME Frame
+		)
+	{
+		const auto Teb = Wobf::GetTEB();
+
+		if (!RtlpNotAllowingMultipleActivation &&
+			((Frame->Frame.Flags & RTL_ACTIVATION_CONTEXT_STACK_FRAME_FLAG_NOT_REALLY_ACTIVATED) != 0))
+		{
+			return;
+		}
+		else if (Teb->ActivationContextStack.ActiveFrame != &Frame->Frame)
+		{
+			EXCEPTION_RECORD ExceptionRecord;
+			ULONG InterveningFrameCount = 0;
+
+			wtype::PRTL_ACTIVATION_CONTEXT_STACK_FRAME SearchFrame = 
+				static_cast<wtype::PRTL_ACTIVATION_CONTEXT_STACK_FRAME>(Teb->ActivationContextStack.ActiveFrame);
+			const wtype::PRTL_ACTIVATION_CONTEXT_STACK_FRAME Previous = Frame->Frame.Previous;
+
+			while ((SearchFrame != NULL) && (SearchFrame != Previous)) {
+				InterveningFrameCount++;
+				SearchFrame = SearchFrame->Previous;
+			}
+
+			ExceptionRecord.ExceptionRecord = NULL;
+			ExceptionRecord.NumberParameters = 3;
+			ExceptionRecord.ExceptionInformation[0] = InterveningFrameCount;
+			ExceptionRecord.ExceptionInformation[1] = (ULONG_PTR)&Frame->Frame;
+			ExceptionRecord.ExceptionInformation[2] = (ULONG_PTR)Teb->ActivationContextStack.ActiveFrame;
+
+			if (SearchFrame != NULL) {
+				if (InterveningFrameCount == 0) {
+					ExceptionRecord.ExceptionCode = STATUS_SXS_MULTIPLE_DEACTIVATION;
+				}
+				else {
+					ExceptionRecord.ExceptionCode = STATUS_SXS_EARLY_DEACTIVATION;
+				}
+
+				ExceptionRecord.ExceptionFlags = 0;
+			}
+			else {
+				ExceptionRecord.ExceptionCode = STATUS_SXS_INVALID_DEACTIVATION;
+				ExceptionRecord.ExceptionFlags = EXCEPTION_NONCONTINUABLE;
+			}
+
+			RtlRaiseException(&ExceptionRecord);
+		}
+
+		Teb->ActivationContextStack.ActiveFrame = Frame->Frame.Previous;
+
+	}
+	PLARGE_INTEGER NtApi::BaseFormatTimeOut(OUT PLARGE_INTEGER TimeOut, IN DWORD Milliseconds)
+	{
+		if ((LONG)Milliseconds == -1) {
+			return(NULL);
+		}
+		TimeOut->QuadPart = UInt32x32To64(Milliseconds, 10000);
+		TimeOut->QuadPart *= -1;
+		return TimeOut;
+	}
+
+	HANDLE NtApi::CreateMutexW(LPSECURITY_ATTRIBUTES lpMutexAttributes, BOOL bInitialOwner, LPCWSTR lpName)
+	{
+		NTSTATUS Status;
+		OBJECT_ATTRIBUTES Obja;
+		HANDLE Handle = nullptr;
+		UNICODE_STRING name;
+		if (lpName != nullptr) {
+			NtApi::RtlInitUnicodeString(&name, lpName);
+
+			InitializeObjectAttributes(&Obja, &name, 0, NULL, NULL);
+		}
+		else {
+			InitializeObjectAttributes(&Obja, NULL, 0, NULL, NULL);
+		}
+
+		Status = SYS(NtCreateMutant)(
+			&Handle,
+			MUTANT_ALL_ACCESS,
+			&Obja,
+			(BOOLEAN)bInitialOwner
+		);
+
+		if (NT_SUCCESS(Status)) {
+			if (Status == STATUS_OBJECT_NAME_EXISTS) {
+				NtApi::SetLastError(ERROR_ALREADY_EXISTS);
+			}
+			else {
+				NtApi::SetLastError(0);
+			}
+			return Handle;
+		}
+		else {
+			NtApi::BaseSetLastNTError(Status);
+			return NULL;
+		}
+	}
+
+	bool NtApi::ReleaseMutex(HANDLE hMutex)
+	{
+		NTSTATUS Status;
+
+		Status = SYS(NtReleaseMutant)(hMutex, NULL);
+		if (!NT_SUCCESS(Status)) {
+			NtApi::BaseSetLastNTError(Status);
+			return false;
+		}
+		return true;
+	}
+
+	DWORD NtApi::WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds)
+	{
+		return NtApi::WaitForSingleObjectEx(hHandle, dwMilliseconds, FALSE);
+	}
+	DWORD NtApi::WaitForSingleObjectEx(HANDLE hHandle, DWORD dwMilliseconds, BOOL bAlertable)
+	{
+		NTSTATUS Status;
+		LARGE_INTEGER TimeOut;
+		PLARGE_INTEGER pTimeOut;
+		wtype::RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME Frame = { sizeof(Frame), RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME_FORMAT_WHISTLER };
+
+		//core::RtlActivateActivationContextUnsafeFast(&Frame, NULL); // make the process default activation context active so that APCs are delivered under it
+		//__try {
+
+			auto Peb = Wobf::GetPEB();
+			switch (HandleToUlong(hHandle)) {
+			case STD_INPUT_HANDLE:  hHandle = Peb->ProcessParameters->StandardInput;
+				break;
+			case STD_OUTPUT_HANDLE: hHandle = Peb->ProcessParameters->StandardOutput;
+				break;
+			case STD_ERROR_HANDLE:  hHandle = Peb->ProcessParameters->StandardError;
+				break;
+			}
+
+			/*if (CONSOLE_HANDLE(hHandle) && VerifyConsoleIoHandle(hHandle)) {
+				hHandle = GetConsoleInputWaitHandle();
+			}*/
+
+			pTimeOut = NtApi::BaseFormatTimeOut(&TimeOut, dwMilliseconds);
+		rewait:
+			Status = SYS(NtWaitForSingleObject)(hHandle, (BOOLEAN)bAlertable, pTimeOut);
+			if (!NT_SUCCESS(Status)) {
+				NtApi::BaseSetLastNTError(Status);
+				Status = (NTSTATUS)-1;
+			}
+			else {
+				if (bAlertable && Status == STATUS_ALERTED) {
+					goto rewait;
+				}
+			}
+		/* }
+		__finally {
+			//deactivation
+		}*/
+		//core::RtlDeactivateActivationContextUnsafeFast(&Frame);
+
+		return (DWORD)Status;
+	}
 	bool NtApi::TerminateProcess(HANDLE hProcess, UINT uExitCode)
 	{
 		if (hProcess == nullptr) return false;
@@ -48,8 +237,8 @@ namespace core {
 	}
 	HANDLE NtApi::GetCurrentProcess()
 	{
-		// return -1;
-		return API(KERNEL32, GetCurrentProcess)();
+		return reinterpret_cast<HANDLE>(-1);
+		//return API(KERNEL32, GetCurrentProcess)();
 	}
 	DWORD NtApi::GetLastError()
 	{
@@ -362,9 +551,100 @@ namespace core {
 		return (NT_SUCCESS(NtStatus));
 	}
 
-	LPSYSTEM_INFO __stdcall NtApi::GetSystemInfo()
+	LPSYSTEM_INFO WINAPI NtApi::GetSystemInfo()
 	{
-		API(KERNEL32, GetSystemInfo)();
-		return LPSYSTEM_INFO();
+		NTSTATUS Status;
+		wtype::SYSTEM_BASIC_INFORMATION BasicInfo;
+		wtype::SYSTEM_PROCESSOR_INFORMATION ProcessorInfo;
+
+
+		Status = SYS(NtQuerySystemInformation)(
+			SystemBasicInformation,
+			&BasicInfo,
+			sizeof(BasicInfo),
+			NULL
+		);
+		if (!NT_SUCCESS(Status)) {
+			core::zeromem(&var, sizeof var);
+			return &var;
+		}
+
+		Status = SYS(NtQuerySystemInformation)(
+			static_cast<SYSTEM_INFORMATION_CLASS>(wtype::SystemProcessorInformation),
+			&ProcessorInfo,
+			sizeof(ProcessorInfo),
+			NULL
+		);
+		if (!NT_SUCCESS(Status)) {
+			core::zeromem(&var, sizeof var);
+			return &var;
+		}
+
+		core::NtApi::GetSystemInfoInternal(
+			&BasicInfo,
+			&ProcessorInfo,
+			&var);
+
+		return &var;
+	}
+
+	void core::NtApi::GetSystemInfoInternal(
+			IN wtype::PSYSTEM_BASIC_INFORMATION BasicInfo,
+			IN wtype::PSYSTEM_PROCESSOR_INFORMATION ProcessorInfo,
+			OUT LPSYSTEM_INFO lpSystemInfo
+		)
+	{
+		core::zeromem(lpSystemInfo, sizeof SYSTEM_INFO);
+
+		lpSystemInfo->wProcessorArchitecture = ProcessorInfo->ProcessorArchitecture;
+		lpSystemInfo->wReserved = 0;
+		lpSystemInfo->dwPageSize = BasicInfo->PageSize;
+		lpSystemInfo->lpMinimumApplicationAddress = (LPVOID)BasicInfo->MinimumUserModeAddress;
+		lpSystemInfo->lpMaximumApplicationAddress = (LPVOID)BasicInfo->MaximumUserModeAddress;
+		lpSystemInfo->dwActiveProcessorMask = BasicInfo->ActiveProcessorsAffinityMask;
+		lpSystemInfo->dwNumberOfProcessors = BasicInfo->NumberOfProcessors;
+		lpSystemInfo->wProcessorLevel = ProcessorInfo->ProcessorLevel;
+		lpSystemInfo->wProcessorRevision = ProcessorInfo->ProcessorRevision;
+
+		if (ProcessorInfo->ProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL) {
+			if (ProcessorInfo->ProcessorLevel == 3) {
+				lpSystemInfo->dwProcessorType = PROCESSOR_INTEL_386;
+			}
+			else
+				if (ProcessorInfo->ProcessorLevel == 4) {
+					lpSystemInfo->dwProcessorType = PROCESSOR_INTEL_486;
+				}
+				else {
+					lpSystemInfo->dwProcessorType = PROCESSOR_INTEL_PENTIUM;
+				}
+		}
+		else
+			if (ProcessorInfo->ProcessorArchitecture == PROCESSOR_ARCHITECTURE_MIPS) {
+				lpSystemInfo->dwProcessorType = PROCESSOR_MIPS_R4000;
+			}
+			else
+				if (ProcessorInfo->ProcessorArchitecture == PROCESSOR_ARCHITECTURE_ALPHA) {
+					lpSystemInfo->dwProcessorType = PROCESSOR_ALPHA_21064;
+				}
+				else
+					if (ProcessorInfo->ProcessorArchitecture == PROCESSOR_ARCHITECTURE_PPC) {
+						lpSystemInfo->dwProcessorType = 604;  // backward compatibility
+					}
+					else
+						if (ProcessorInfo->ProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64) {
+							lpSystemInfo->dwProcessorType = PROCESSOR_INTEL_IA64;
+						}
+						else {
+							lpSystemInfo->dwProcessorType = 0;
+						}
+
+		lpSystemInfo->dwAllocationGranularity = BasicInfo->AllocationGranularity;
+
+		if (GetProcessVersion(0) < 0x30033) {
+			lpSystemInfo->wProcessorLevel = 0;
+			lpSystemInfo->wProcessorRevision = 0;
+		}
+
+		return;
 	}
 }

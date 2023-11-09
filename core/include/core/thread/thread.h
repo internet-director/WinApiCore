@@ -31,9 +31,15 @@ namespace core {
 			return hThread != nullptr;
 		}
 		void kill();
+		void suspend();
+		void resume();
 		void detach() noexcept;
 		void swap(thread& other) noexcept;
 		DWORD get_id() const noexcept { return id; }
+
+		static size_t hardware_concurrency() {
+			return core::GetSystemInfo()->dwNumberOfProcessors;
+		}
 
 	private:
 		void call(core::function<void()>* func);

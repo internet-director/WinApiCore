@@ -53,7 +53,7 @@ namespace core {
 
 	template <class>
 	// false value attached to a dependent name (for static_assert)
-	_INLINE_VAR constexpr bool _Always_false = false;
+	constexpr bool _Always_false = false;
 
 	template <class... _Types>
 	using void_t = void;
@@ -243,6 +243,20 @@ namespace core {
 
 // winapi types, so as not to conflict with the default definition
 namespace wtype {
+    using PPVOID = PVOID*;
+#define GDI_HANDLE_BUFFER_SIZE32  34
+#define GDI_HANDLE_BUFFER_SIZE64  60
+
+#if !defined(_IA64_) && !defined(_AMD64_)
+#define GDI_HANDLE_BUFFER_SIZE      GDI_HANDLE_BUFFER_SIZE32
+#else
+#define GDI_HANDLE_BUFFER_SIZE      GDI_HANDLE_BUFFER_SIZE64
+#endif
+
+    typedef ULONG GDI_HANDLE_BUFFER32[GDI_HANDLE_BUFFER_SIZE32];
+    typedef ULONG GDI_HANDLE_BUFFER64[GDI_HANDLE_BUFFER_SIZE64];
+    typedef ULONG GDI_HANDLE_BUFFER[GDI_HANDLE_BUFFER_SIZE];
+
     typedef struct _PEB_FREE_BLOCK {
         struct _PEB_FREE_BLOCK* Next;
         ULONG Size;
@@ -348,7 +362,7 @@ namespace wtype {
         PEBTEB_POINTER(PPEB_FREE_BLOCK) FreeList;
         ULONG TlsExpansionCounter;
         PEBTEB_POINTER(PVOID) TlsBitmap;
-        ULONG TlsBitmapBits[2];         // TLS_MINIMUM_AVAILABLE bits
+        ULONG TlsBitmapBits[2];
         PEBTEB_POINTER(PVOID) ReadOnlySharedMemoryBase;
         PEBTEB_POINTER(PVOID) ReadOnlySharedMemoryHeap;
         PEBTEB_POINTER(PPVOID) ReadOnlyStaticServerData;
@@ -487,6 +501,62 @@ namespace wtype {
         BOOLEAN UseKnownWx86Dll;
         char    OleStubInvoked;
     } WX86THREAD, * PWX86THREAD;
+    //
+    //  Fusion/sxs thread state information
+    //
+
+#define ACTIVATION_CONTEXT_STACK_FLAG_QUERIES_DISABLED (0x00000001)
+
+    typedef struct _ACTIVATION_CONTEXT_STACK {
+        ULONG Flags;
+        ULONG NextCookieSequenceNumber;
+        PVOID ActiveFrame;
+        LIST_ENTRY FrameListCache;
+
+#if NT_SXS_PERF_COUNTERS_ENABLED
+        struct _ACTIVATION_CONTEXT_STACK_PERF_COUNTERS {
+            ULONGLONG Activations;
+            ULONGLONG ActivationCycles;
+            ULONGLONG Deactivations;
+            ULONGLONG DeactivationCycles;
+        } Counters;
+#endif // NT_SXS_PERF_COUNTERS_ENABLED
+    } ACTIVATION_CONTEXT_STACK, * PACTIVATION_CONTEXT_STACK;
+
+    typedef const ACTIVATION_CONTEXT_STACK* PCACTIVATION_CONTEXT_STACK;
+
+#define TEB_ACTIVE_FRAME_CONTEXT_FLAG_EXTENDED (0x00000001)
+
+    typedef struct _TEB_ACTIVE_FRAME_CONTEXT {
+        ULONG Flags;
+        PCSTR FrameName;
+    } TEB_ACTIVE_FRAME_CONTEXT, * PTEB_ACTIVE_FRAME_CONTEXT;
+
+    typedef const struct _TEB_ACTIVE_FRAME_CONTEXT* PCTEB_ACTIVE_FRAME_CONTEXT;
+
+    typedef struct _TEB_ACTIVE_FRAME_CONTEXT_EX {
+        TEB_ACTIVE_FRAME_CONTEXT BasicContext;
+        PCSTR SourceLocation; // e.g. "Z:\foo\bar\baz.c"
+    } TEB_ACTIVE_FRAME_CONTEXT_EX, * PTEB_ACTIVE_FRAME_CONTEXT_EX;
+
+    typedef const struct _TEB_ACTIVE_FRAME_CONTEXT_EX* PCTEB_ACTIVE_FRAME_CONTEXT_EX;
+
+#define TEB_ACTIVE_FRAME_FLAG_EXTENDED (0x00000001)
+
+    typedef struct _TEB_ACTIVE_FRAME {
+        ULONG Flags;
+        struct _TEB_ACTIVE_FRAME* Previous;
+        PCTEB_ACTIVE_FRAME_CONTEXT Context;
+    } TEB_ACTIVE_FRAME, * PTEB_ACTIVE_FRAME;
+
+    typedef const struct _TEB_ACTIVE_FRAME* PCTEB_ACTIVE_FRAME;
+
+    typedef struct _TEB_ACTIVE_FRAME_EX {
+        TEB_ACTIVE_FRAME BasicFrame;
+        PVOID ExtensionIdentifier; // use address of your DLL Main or something unique to your mapping in the address space
+    } TEB_ACTIVE_FRAME_EX, * PTEB_ACTIVE_FRAME_EX;
+
+    typedef const struct _TEB_ACTIVE_FRAME_EX* PCTEB_ACTIVE_FRAME_EX;
 
     typedef struct _TEB {
         NT_TIB NtTib;
@@ -494,7 +564,11 @@ namespace wtype {
         CLIENT_ID ClientId;
         PVOID ActiveRpcHandle;
         PVOID ThreadLocalStoragePointer;
-        LPVOID ProcessEnvironmentBlock;
+#if defined(PEBTEB_BITS)
+        PVOID ProcessEnvironmentBlock;
+#else
+        PPEB ProcessEnvironmentBlock;
+#endif
         ULONG LastErrorValue;
         ULONG CountOfOwnedCriticalSections;
         PVOID CsrClientThread;
@@ -504,25 +578,20 @@ namespace wtype {
         PVOID WOW32Reserved;            // used by WOW
         LCID CurrentLocale;
         ULONG FpSoftwareStatusRegister; // offset known by outsiders!
-#ifdef _IA64_
-        ULONGLONG Gdt[GDT_ENTRIES];         // Provide Gdt table entries
-        ULONGLONG GdtDescriptor;
-        ULONGLONG LdtDescriptor;
-        ULONGLONG FsDescriptor;
-#else  // _IA64_
         PVOID SystemReserved1[54];      // Used by FP emulator
-#endif // _IA64_
         NTSTATUS ExceptionCode;         // for RaiseUserException
-        UCHAR SpareBytes1[44];
+        ACTIVATION_CONTEXT_STACK ActivationContextStack;   // Fusion activation stack
+        // sizeof(PVOID) is a way to express processor-dependence, more generally than #ifdef _WIN64
+        UCHAR SpareBytes1[48 - sizeof(PVOID) - sizeof(ACTIVATION_CONTEXT_STACK)];
         GDI_TEB_BATCH GdiTebBatch;      // Gdi batching
         CLIENT_ID RealClientId;
         HANDLE GdiCachedProcessHandle;
         ULONG GdiClientPID;
         ULONG GdiClientTID;
         PVOID GdiThreadLocalInfo;
-        ULONG Win32ClientInfo[WIN32_CLIENT_INFO_LENGTH];    // User32 Client Info
+        ULONG_PTR Win32ClientInfo[WIN32_CLIENT_INFO_LENGTH]; // User32 Client Info
         PVOID glDispatchTable[233];     // OpenGL
-        ULONG glReserved1[29];          // OpenGL
+        ULONG_PTR glReserved1[29];      // OpenGL
         PVOID glReserved2;              // OpenGL
         PVOID glSectionInfo;            // OpenGL
         PVOID glSection;                // OpenGL
@@ -532,10 +601,6 @@ namespace wtype {
         ULONG LastStatusValue;
         UNICODE_STRING StaticUnicodeString;
         WCHAR StaticUnicodeBuffer[STATIC_UNICODE_BUFFER_LENGTH];
-#ifdef  _IA64_
-        PVOID DeallocationBStore;
-        PVOID BStoreLimit;
-#endif
         PVOID DeallocationStack;
         PVOID TlsSlots[TLS_MINIMUM_AVAILABLE];
         LIST_ENTRY TlsLinks;
@@ -546,12 +611,178 @@ namespace wtype {
         PVOID Instrumentation[16];
         PVOID WinSockData;              // WinSock
         ULONG GdiBatchCount;
-        ULONG Spare2;
+        BOOLEAN InDbgPrint;
+        BOOLEAN FreeStackOnTermination;
+        BOOLEAN HasFiberData;
+        BOOLEAN IdealProcessor;
         ULONG Spare3;
         PVOID ReservedForPerf;
         PVOID ReservedForOle;
         ULONG WaitingOnLoaderLock;
         WX86THREAD Wx86Thread;
-        PVOID* TlsExpansionSlots;
+        PPVOID TlsExpansionSlots;
+#if (defined(_IA64_) && !defined(PEBTEB_BITS)) \
+    || ((defined(_IA64_) || defined(_X86_)) && defined(PEBTEB_BITS) && PEBTEB_BITS == 64)
+        //
+        // These are in the native ia64 TEB, and the TEB64 for ia64 and x86.
+        //
+        PVOID DeallocationBStore;
+        PVOID BStoreLimit;
+#endif
+        LCID ImpersonationLocale;       // Current locale of impersonated user
+        ULONG IsImpersonating;          // Thread impersonation status
+        PVOID NlsCache;                 // NLS thread cache
+        PVOID pShimData;                // Per thread data used in the shim
+        ULONG HeapVirtualAffinity;
+        HANDLE CurrentTransactionHandle;// reserved for TxF transaction context
+        PTEB_ACTIVE_FRAME ActiveFrame;
     } TEB, *PTEB;
+
+    typedef struct _SYSTEM_PROCESSOR_INFORMATION {
+        USHORT ProcessorArchitecture;
+        USHORT ProcessorLevel;
+        USHORT ProcessorRevision;
+        USHORT Reserved;
+        ULONG ProcessorFeatureBits;
+    } SYSTEM_PROCESSOR_INFORMATION, * PSYSTEM_PROCESSOR_INFORMATION;
+
+    typedef enum _SYSTEM_INFORMATION_CLASS {
+        SystemBasicInformation,
+        SystemProcessorInformation,             // obsolete...delete
+        SystemPerformanceInformation,
+        SystemTimeOfDayInformation,
+        SystemPathInformation,
+        SystemProcessInformation,
+        SystemCallCountInformation,
+        SystemDeviceInformation,
+        SystemProcessorPerformanceInformation,
+        SystemFlagsInformation,
+        SystemCallTimeInformation,
+        SystemModuleInformation,
+        SystemLocksInformation,
+        SystemStackTraceInformation,
+        SystemPagedPoolInformation,
+        SystemNonPagedPoolInformation,
+        SystemHandleInformation,
+        SystemObjectInformation,
+        SystemPageFileInformation,
+        SystemVdmInstemulInformation,
+        SystemVdmBopInformation,
+        SystemFileCacheInformation,
+        SystemPoolTagInformation,
+        SystemInterruptInformation,
+        SystemDpcBehaviorInformation,
+        SystemFullMemoryInformation,
+        SystemLoadGdiDriverInformation,
+        SystemUnloadGdiDriverInformation,
+        SystemTimeAdjustmentInformation,
+        SystemSummaryMemoryInformation,
+        SystemMirrorMemoryInformation,
+        SystemPerformanceTraceInformation,
+        SystemObsolete0,
+        SystemExceptionInformation,
+        SystemCrashDumpStateInformation,
+        SystemKernelDebuggerInformation,
+        SystemContextSwitchInformation,
+        SystemRegistryQuotaInformation,
+        SystemExtendServiceTableInformation,
+        SystemPrioritySeperation,
+        SystemVerifierAddDriverInformation,
+        SystemVerifierRemoveDriverInformation,
+        SystemProcessorIdleInformation,
+        SystemLegacyDriverInformation,
+        SystemCurrentTimeZoneInformation,
+        SystemLookasideInformation,
+        SystemTimeSlipNotification,
+        SystemSessionCreate,
+        SystemSessionDetach,
+        SystemSessionInformation,
+        SystemRangeStartInformation,
+        SystemVerifierInformation,
+        SystemVerifierThunkExtend,
+        SystemSessionProcessInformation,
+        SystemLoadGdiDriverInSystemSpace,
+        SystemNumaProcessorMap,
+        SystemPrefetcherInformation,
+        SystemExtendedProcessInformation,
+        SystemRecommendedSharedDataAlignment,
+        SystemComPlusPackage,
+        SystemNumaAvailableMemory,
+        SystemProcessorPowerInformation,
+        SystemEmulationBasicInformation,
+        SystemEmulationProcessorInformation,
+        SystemExtendedHandleInformation,
+        SystemLostDelayedWriteInformation
+    } SYSTEM_INFORMATION_CLASS;
+
+
+    typedef struct _SYSTEM_BASIC_INFORMATION {
+        ULONG Reserved;
+        ULONG TimerResolution;
+        ULONG PageSize;
+        ULONG NumberOfPhysicalPages;
+        ULONG LowestPhysicalPageNumber;
+        ULONG HighestPhysicalPageNumber;
+        ULONG AllocationGranularity;
+        ULONG_PTR MinimumUserModeAddress;
+        ULONG_PTR MaximumUserModeAddress;
+        ULONG_PTR ActiveProcessorsAffinityMask;
+        CCHAR NumberOfProcessors;
+    } SYSTEM_BASIC_INFORMATION, * PSYSTEM_BASIC_INFORMATION;
+
+    struct _ACTIVATION_CONTEXT;
+
+    using PACTIVATION_CONTEXT = _ACTIVATION_CONTEXT*;
+
+    typedef
+        VOID(NTAPI* PACTIVATION_CONTEXT_NOTIFY_ROUTINE)(
+            IN ULONG NotificationType,
+            IN PACTIVATION_CONTEXT ActivationContext,
+            IN const VOID* ActivationContextData,
+            IN PVOID NotificationContext,
+            IN PVOID NotificationData,
+            IN OUT PBOOLEAN DisableThisNotification
+            );
+
+    typedef struct _ASSEMBLY_STORAGE_MAP_ENTRY {
+        ULONG Flags;
+        UNICODE_STRING DosPath;         // stored with a trailing unicode null
+        HANDLE Handle;                  // open file handle on the directory to lock it down
+    } ASSEMBLY_STORAGE_MAP_ENTRY, * PASSEMBLY_STORAGE_MAP_ENTRY;
+
+#define ASSEMBLY_STORAGE_MAP_ASSEMBLY_ARRAY_IS_HEAP_ALLOCATED (0x00000001)
+
+    typedef struct _ASSEMBLY_STORAGE_MAP {
+        ULONG Flags;
+        ULONG AssemblyCount;
+        PASSEMBLY_STORAGE_MAP_ENTRY* AssemblyArray;
+    } ASSEMBLY_STORAGE_MAP, * PASSEMBLY_STORAGE_MAP;
+
+    typedef struct _ACTIVATION_CONTEXT {
+        LONG RefCount;
+        ULONG Flags;
+        PVOID ActivationContextData;
+        PACTIVATION_CONTEXT_NOTIFY_ROUTINE NotificationRoutine;
+        PVOID NotificationContext;
+        ULONG SentNotifications[8];
+        ULONG DisabledNotifications[8];
+        ASSEMBLY_STORAGE_MAP StorageMap;
+        PASSEMBLY_STORAGE_MAP_ENTRY InlineStorageMapEntries[32];
+    } ACTIVATION_CONTEXT;
+
+    typedef struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME {
+        struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME* Previous;
+        PACTIVATION_CONTEXT ActivationContext;
+        ULONG Flags;
+    } RTL_ACTIVATION_CONTEXT_STACK_FRAME, * PRTL_ACTIVATION_CONTEXT_STACK_FRAME;
+
+    typedef const struct _RTL_ACTIVATION_CONTEXT_STACK_FRAME* PCRTL_ACTIVATION_CONTEXT_STACK_FRAME;
+
+#define RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME_FORMAT_WHISTLER (1)
+
+    typedef struct _RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME {
+        SIZE_T Size;
+        ULONG Format;
+        RTL_ACTIVATION_CONTEXT_STACK_FRAME Frame;
+    } RTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME, * PRTL_CALLER_ALLOCATED_ACTIVATION_CONTEXT_STACK_FRAME;
 }

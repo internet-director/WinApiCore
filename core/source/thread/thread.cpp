@@ -27,7 +27,7 @@ core::thread::~thread() {
 void core::thread::join() {
 	if (hThread == nullptr)
 		return;
-	API(KERNEL32, WaitForSingleObject)(hThread, INFINITE);
+	core::WaitForSingleObject(hThread, INFINITE);
 	detach();
 }
 
@@ -36,6 +36,18 @@ void core::thread::kill() {
 		return;
 	core::TerminateThread(hThread, 0);
 	detach();
+}
+
+void core::thread::suspend() {
+	if (hThread == nullptr)
+		return;
+	core::SuspendThread(hThread);
+}
+
+void core::thread::resume() {
+	if (hThread == nullptr)
+		return;
+	core::ResumeThread(hThread);
 }
 
 void core::thread::detach() noexcept {

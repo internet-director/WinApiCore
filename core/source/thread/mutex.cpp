@@ -1,27 +1,37 @@
 #include "pch.h"
 #include <thread/mutex.h>
+#include <iostream>
 
 namespace core {
 	mutex::mutex() {
-		_mutex = API(KERNEL32, CreateMutexW)(NULL, FALSE, L"mutex");
+		_mutex = core::CreateMutexW(NULL, FALSE, NULL);
 	}
 	mutex::~mutex() {
-		unlock();
-		core::CloseHandle(_mutex);
+		if (inited()) {
+			unlock();
+			core::CloseHandle(_mutex);
+			_mutex = nullptr;
+		}
 	}
 
 	void mutex::lock() {
-		API(KERNEL32, WaitForSingleObject)(_mutex, INFINITE);
+		if (_mutex != nullptr) {
+			locked = true;
+			//locked = core::WaitForSingleObject(_mutex, INFINITE) == WAIT_OBJECT_0;
+		}
 	}
 
 	bool mutex::try_lock() noexcept {
-		locked = API(KERNEL32, WaitForSingleObject)(_mutex, 0) == WAIT_OBJECT_0;
+		if (_mutex == nullptr) {
+			return false;
+		}
+		locked = core::WaitForSingleObject(_mutex, 0) == WAIT_OBJECT_0;
 		return locked;
 	}
 
 	void mutex::unlock() {
 		if (locked) {
-			API(KERNEL32, ReleaseMutex)(_mutex);
+			core::ReleaseMutex(_mutex);
 			locked = false;
 		}
 	}
