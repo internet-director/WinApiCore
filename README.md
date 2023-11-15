@@ -10,6 +10,7 @@
 - direct syscall aka SYS(NtFunction) in wobf, multithreading doesn't supported, if NtFunction does not finded, return NtAlwaysError(returned NT(-1))
 - memory basic utils
 - winapi implementation on ntapi
+- multithreading tools (mutex, condition_variable, jthread)
 ### Deprecated:
 - processMonitor(search existing process) and process(open existing process or create new process)
 
